@@ -8,7 +8,7 @@ import (
 func main() {
 	// keyVals := make(map[string]string)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// w.Header().Set("Access-Control-Allow-Origin", "*")
 
 		id := "1"
 		// val, found := keyVals[id]
