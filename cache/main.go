@@ -28,5 +28,5 @@ func main() {
 		// }
 	})
 	fmt.Println("Cache server running on port :80")
-	http.ListenAndServe("0.0.0.0:80", nil)
+	http.ListenAndServe(":80", nil)
 }
