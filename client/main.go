@@ -11,6 +11,7 @@ func main() {
 	resChanLen := 100
 	resChan := make(chan string, resChanLen)
 	for i := 0; i < resChanLen; i++ {
+		fmt.Println("it's running")
 		go func(index int) {
 			params := url.Values{}
 			params.Add("id", fmt.Sprint(index))
