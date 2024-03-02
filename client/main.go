@@ -10,7 +10,7 @@ import (
 func main() {
 	params := url.Values{}
 	params.Add("id", fmt.Sprint(1))
-	url := "http://10.0.0.4:8888/"
+	url := "http://172.208.52.232:8888/"
 	// + "?" + params.Encode()
 	fmt.Println("About to make request")
 	res, err := http.Get(url)
