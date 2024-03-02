@@ -8,32 +8,48 @@ import (
 )
 
 func main() {
-	resChanLen := 100
-	resChan := make(chan string, resChanLen)
-	for i := 0; i < resChanLen; i++ {
-		go func(index int) {
-			params := url.Values{}
-			params.Add("id", fmt.Sprint(index))
-			url := "http://172.208.52.232:80/" + "?" + params.Encode()
-			res, err := http.Get(url)
-			if err != nil {
-				fmt.Println("Error", err)
-				return
-			}
-			defer res.Body.Close()
-			body, err := io.ReadAll(res.Body)
-			if err != nil {
-				fmt.Println("something went wrong, ", err)
-			}
-			// fmt.Println(string(body))
-			resChan <- string(body)
-			// fmt.Printf("received output from server from request %d\n", index)
-		}(1)
+	params := url.Values{}
+	params.Add("id", fmt.Sprint(1))
+	url := "http://172.208.52.232:80/" + "?" + params.Encode()
+	res, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error", err)
+		return
 	}
-	for i := 0; i < resChanLen; i++ {
-		s := <-resChan
-		fmt.Println(s)
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("something went wrong, ", err)
+	} else {
+		fmt.Println(string(body))
+
 	}
+	// resChanLen := 100
+	// resChan := make(chan string, resChanLen)
+	// for i := 0; i < resChanLen; i++ {
+	// 	go func(index int) {
+	// 		params := url.Values{}
+	// 		params.Add("id", fmt.Sprint(index))
+	// 		url := "http://172.208.52.232:80/" + "?" + params.Encode()
+	// 		res, err := http.Get(url)
+	// 		if err != nil {
+	// 			fmt.Println("Error", err)
+	// 			return
+	// 		}
+	// 		defer res.Body.Close()
+	// 		body, err := io.ReadAll(res.Body)
+	// 		if err != nil {
+	// 			fmt.Println("something went wrong, ", err)
+	// 		}
+	// 		// fmt.Println(string(body))
+	// 		resChan <- string(body)
+	// 		// fmt.Printf("received output from server from request %d\n", index)
+	// 	}(1)
+	// }
+	// for i := 0; i < resChanLen; i++ {
+	// 	s := <-resChan
+	// 	fmt.Println(s)
+	// }
 	// for s := range resChan {
 	// 	fmt.Println(s)
 	// 	if len(resChan) == 0 {
