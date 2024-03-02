@@ -14,7 +14,7 @@ func main() {
 		go func(index int) {
 			params := url.Values{}
 			params.Add("id", fmt.Sprint(index))
-			url := "http://localhost:8888/" + "?" + params.Encode()
+			url := "http://172.208.52.232:8080/" + "?" + params.Encode()
 			res, err := http.Get(url)
 			if err != nil {
 				fmt.Println("Error", err)

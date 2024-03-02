@@ -18,7 +18,7 @@ func main() {
 		} else {
 			keyVals[id] = id
 			fmt.Printf("Forwarding request with number %s\n", id)
-			serverUrl, err := url.Parse("http://localhost:8080/")
+			serverUrl, err := url.Parse("http://172.208.52.232:8080/")
 			if err != nil {
 				fmt.Println("Error was not nil")
 			}
