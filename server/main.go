@@ -11,7 +11,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		numRequests++
-		id := r.URL.Query().Get("id")
+		id := "1"
 		fmt.Printf("processing request %s\n", id)
 		fmt.Fprintf(w, "Server response to %s: %s", id, id)
 	})
