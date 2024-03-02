@@ -10,6 +10,8 @@ import (
 func main() {
 	keyVals := make(map[string]string)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
 		id := r.URL.Query().Get("id")
 		val, found := keyVals[id]
 		if found {
