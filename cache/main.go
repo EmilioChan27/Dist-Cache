@@ -10,12 +10,13 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		id := "1"
+		// id := "1"
 		// val, found := keyVals[id]
 		// if found {
-		val := "1"
-		fmt.Printf("responding to request with number %s\n", id)
-		fmt.Fprintf(w, "cached response to %s: %s", id, val)
+		// val := "1"
+		// fmt.Printf("responding to request with number %s\n", id)
+		fmt.Println("Something")
+		// fmt.Fprintf(w, "cached response to %s: %s", id, val)
 		// } else {
 		// 	// keyVals[id] = id
 		// 	fmt.Printf("Forwarding request with number %s\n", id)
