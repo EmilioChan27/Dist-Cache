@@ -28,6 +28,6 @@ func main() {
 		// 	server.ServeHTTP(w, r)
 		// }
 	})
-	fmt.Println("Cache server running on port :80")
-	http.ListenAndServe("0.0.0.0:80", nil)
+	fmt.Println("Cache server running on port :8080")
+	http.ListenAndServe("0.0.0.0:8080", nil)
 }
