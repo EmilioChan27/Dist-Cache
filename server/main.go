@@ -9,9 +9,10 @@ var numRequests int = 0
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// w.Header().Set("Access-Control-Allow-Origin", "*")
 		numRequests++
-		id := "1"
+		fmt.Printf("Received %d requests\n", numRequests)
+		id := r.URL.Query().Get("id")
 		fmt.Printf("processing request %s\n", id)
 		fmt.Fprintf(w, "Server response to %s: %s", id, id)
 	})
