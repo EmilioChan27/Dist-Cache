@@ -46,7 +46,7 @@ func main() {
 			// fmt.Println(string(body))
 			resChan <- string(body)
 			// fmt.Printf("received output from server from request %d\n", index)
-		}(1)
+		}(i)
 	}
 	for i := 0; i < resChanLen; i++ {
 		s := <-resChan
