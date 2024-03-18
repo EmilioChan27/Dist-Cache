@@ -1,0 +1,10 @@
+Execution time: 222.6239ms
+Execution time: 163.9643ms
+Execution time: 151.4711ms
+Execution time: 169.645ms
+Execution time: 154.5484ms
+Execution time: 172.5498ms
+Execution time: 137.4452ms
+Execution time: 145.9648ms
+Execution time: 145.2604ms
+Execution time: 146.6178ms

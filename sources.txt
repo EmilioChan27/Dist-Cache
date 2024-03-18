@@ -1,0 +1,4 @@
+https://www.reddit.com/r/golang/comments/16080hu/how_uuid_in_golang_and_postgresql_is_handled/?rdt=50538
+https://www.w3schools.com/sql/sql_foreignkey.asp
+https://stackoverflow.com/questions/7296846/how-to-implement-one-to-one-one-to-many-and-many-to-many-relationships-while-de
+https://josipmisko.com/posts/sql-string-contains-substring
