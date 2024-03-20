@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	fmt.Printf("Connected!\n")
-	createDeleteTest(25, "25x4_cores_75workers_concurrent_2xcreate_2xdelete.txt")
+	createDeleteTest(25, "25x4_cores_2_workers_concurrent_2xcreate_2xdelete.txt")
 	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 	// 	// w.Header().Set("Access-Control-Allow-Origin", "*")
 	// 	_, err = CreateEmployee("Jake", "United States")
@@ -68,7 +68,7 @@ func createDeleteTest(reps int, fileName string) {
 	times := make(chan string, 300)
 	for i := 0; i < reps; i++ {
 		time.Sleep(3 * time.Second)
-		for j := 0; j < 75; j++ {
+		for j := 0; j < 2; j++ {
 
 			go func() {
 				// time.Sleep(interval)
@@ -95,7 +95,7 @@ func createDeleteTest(reps int, fileName string) {
 				times <- str
 			}()
 		}
-		for i := 0; i < 75; i++ {
+		for i := 0; i < 2; i++ {
 			str := <-times
 			file.WriteString(str)
 		}
