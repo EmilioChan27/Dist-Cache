@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	fmt.Printf("Connected!\n")
-	createDeleteTest(25, "25x1s_2xcreate_2xdelete.txt", time.Second)
+	createDeleteTest(25, "25x30s_2xcreate_2xdelete.txt", 30*time.Second)
 	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 	// 	// w.Header().Set("Access-Control-Allow-Origin", "*")
 	// 	_, err = CreateEmployee("Jake", "United States")
