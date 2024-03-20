@@ -7,7 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
+	"os"
+	"time"
 
 	_ "github.com/microsoft/go-mssqldb"
 )
@@ -35,26 +36,70 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	fmt.Printf("Connected!\n")
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// w.Header().Set("Access-Control-Allow-Origin", "*")
-		_, err = CreateEmployee("Jake", "United States")
-		if err != nil {
-			log.Fatal(err)
-		}
-		// count, err := ReadEmployees()
-		// if err != nil {
-		// 	log.Fatal("Error reading Employees: ", err.Error())
-		// }
-		_, err = DeleteEmployee("Nikita")
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Fprintf(w, "added and deleted successfully\n")
-	})
-	fmt.Println("Server is running on port 8080...")
-	http.ListenAndServe(":8080", nil)
+	createDeleteTest(25, "25x4_cores_75workers_concurrent_2xcreate_2xdelete.txt")
+	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	// w.Header().Set("Access-Control-Allow-Origin", "*")
+	// 	_, err = CreateEmployee("Jake", "United States")
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	// count, err := ReadEmployees()
+	// 	// if err != nil {
+	// 	// 	log.Fatal("Error reading Employees: ", err.Error())
+	// 	// }
+	// 	_, err = DeleteEmployee("Nikita")
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	fmt.Fprintf(w, "added and deleted successfully\n")
+	// })
+	// fmt.Println("Server is running on port 8080...")
+	// http.ListenAndServe(":8080", nil)
 
 	// fmt.Printf("Read %d row(s) successfully.\n", count)
+
+}
+
+func createDeleteTest(reps int, fileName string) {
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	times := make(chan string, 300)
+	for i := 0; i < reps; i++ {
+		time.Sleep(3 * time.Second)
+		for j := 0; j < 75; j++ {
+
+			go func() {
+				// time.Sleep(interval)
+				beforeTime := time.Now()
+				_, err := CreateEmployee("Jake", "United States")
+				if err != nil {
+					log.Fatal(err)
+				}
+				_, err = CreateEmployee("Jake", "Germany")
+				if err != nil {
+					log.Fatal(err)
+				}
+				_, err = DeleteEmployee("Nikita")
+				if err != nil {
+					log.Fatal(err)
+				}
+				_, err = DeleteEmployee("Nikita")
+				if err != nil {
+					log.Fatal(err)
+				}
+				afterTime := time.Now()
+				executionTime := afterTime.Sub(beforeTime)
+				str := fmt.Sprintf("%v\n", executionTime)
+				times <- str
+			}()
+		}
+		for i := 0; i < 75; i++ {
+			str := <-times
+			file.WriteString(str)
+		}
+	}
 
 }
 
