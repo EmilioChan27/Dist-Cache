@@ -36,7 +36,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	fmt.Printf("Connected!\n")
-	createDeleteTest(25, "25x4_cores_2_workers_concurrent_2xcreate_2xdelete.txt")
+	createDeleteTest(25, "25x1s_2xcreate_2xdelete.txt", time.Second)
 	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 	// 	// w.Header().Set("Access-Control-Allow-Origin", "*")
 	// 	_, err = CreateEmployee("Jake", "United States")
@@ -60,7 +60,38 @@ func main() {
 
 }
 
-func createDeleteTest(reps int, fileName string) {
+func createDeleteTest(reps int, fileName string, pause time.Duration) {
+	file, err := os.Create(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for i := 0; i < reps; i++ {
+		time.Sleep(pause)
+		beforeTime := time.Now()
+		_, err := CreateEmployee("Jake", "United States")
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = CreateEmployee("Jake", "Germany")
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = DeleteEmployee("Nikita")
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = DeleteEmployee("Nikita")
+		if err != nil {
+			log.Fatal(err)
+		}
+		afterTime := time.Now()
+		executionTime := afterTime.Sub(beforeTime)
+		str := fmt.Sprintf("%v\n", executionTime)
+		file.WriteString(str)
+	}
+}
+
+func concurrentCreateDeleteTest(reps int, fileName string) {
 	file, err := os.Create(fileName)
 	if err != nil {
 		log.Fatal(err)
