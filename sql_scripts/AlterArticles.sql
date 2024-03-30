@@ -1,0 +1,3 @@
+ALTER TABLE IWSchema.Articles
+DROP COLUMN Tags;
+GO

@@ -1,11 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -28,28 +25,52 @@ func main() {
 	// } else {
 	// 	fmt.Println(string(body))
 	// }
-	file, err := os.Create("1.375m_create_delete.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	for i := 0; i < 25; i++ {
-		time.Sleep(83 * time.Second)
-		beforeTime := time.Now()
-		res, err := http.Get("http://localhost:8080/")
-		if err != nil {
-			log.Fatal("Error reading Employees: ", err.Error())
-		}
-		afterTime := time.Now()
-		executionTime := afterTime.Sub(beforeTime)
-		_, err = io.ReadAll(res.Body)
+	for i := 0; i < 10; i++ {
+		time.Sleep(6 * time.Second)
+		_, err := http.Get("http://localhost:8080/business")
 		if err != nil {
 			log.Fatal(err)
 		}
-		str := fmt.Sprintf("Execution time: %v\n", executionTime)
-		res.Body.Close()
-		file.WriteString(str)
-		// fmt.Println(str)
+		time.Sleep(6 * time.Second)
+		_, err = http.Get("http://localhost:8080/human-interest")
+		if err != nil {
+			log.Fatal(err)
+		}
+		time.Sleep(6 * time.Second)
+		_, err = http.Get("http://localhost:8080/science-technology")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		time.Sleep(6 * time.Second)
+		_, err = http.Get("http://localhost:8080/international-affairs")
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
+
+	//	file, err := os.Create("1.375m_create_delete.txt")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// for i := 0; i < 25; i++ {
+	// 	time.Sleep(83 * time.Second)
+	// 	beforeTime := time.Now()
+	// 	res, err := http.Get("http://localhost:8080/")
+	// 	if err != nil {
+	// 		log.Fatal("Error reading Employees: ", err.Error())
+	// 	}
+	// 	afterTime := time.Now()
+	// 	executionTime := afterTime.Sub(beforeTime)
+	// 	_, err = io.ReadAll(res.Body)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	str := fmt.Sprintf("Execution time: %v\n", executionTime)
+	// 	res.Body.Close()
+	// 	file.WriteString(str)
+	// 	// fmt.Println(str)
+	// }
 	// resChanLen := 100
 	// resChan := make(chan string, resChanLen)
 	// for i := 0; i < resChanLen; i++ {

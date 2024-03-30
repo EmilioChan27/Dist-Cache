@@ -1,36 +1,39 @@
-package main
+package common
 
 import (
 	"container/list"
+	"log"
 	"strings"
 	"sync"
 	"time"
 )
 
 type Article struct {
-	Id          string // primary key
-	Author_id   string // foreign key into author
-	Category_id string // foreign key into category
-	Title       string
-	Image       string
-	Content     string
-	Tags        string // CSV tags
-	Created_at  time.Time
-	Updated_at  time.Time
-	Likes       int
-	Size        int
+	Id        int    // primary key
+	AuthorId  int    // foreign key into author
+	Category  string // foreign key into category
+	Title     string
+	ImageUrl  string
+	Content   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Likes     int
+	Size      int // size of obj in mb
 }
 
 type Author struct {
-	Id           string // primary key
-	Name         string
-	Num_articles int
+	Id            int // primary key
+	Name          string
+	Bio           string
+	Email         string
+	ImageUrl      string
+	SpecialtyTags string // csv tags for their specialty categories
+	NumArticles   int
 }
 
 type Category struct {
-	Id          string // primary key
-	Article_ids string // foreign key into article
-	Name        string
+	Id   int // primary key
+	Name string
 }
 
 type Cache struct {
@@ -106,25 +109,6 @@ func (c *Cache) GetArticles(isLimit bool, limit int) []*Article {
 }
 
 // TODO add the cache aspect back lol
-func (lru *LRU) GetArticlesByTag(tag string, isLimit bool, limit int) []*Article {
-	var arr []*Article = make([]*Article, 0)
-	for e := lru.Article_list.Front(); e != nil; e = e.Next() {
-		article := e.Value.(*Article)
-		if strings.Contains(article.Tags, tag) {
-			arr = append(arr, article)
-		}
-		go func() {
-			lru.SetObject(e)
-		}()
-
-		if isLimit && len(arr) == limit {
-			break
-		}
-	}
-	return arr
-}
-
-// TODO add the cache aspect back lol
 func (lru *LRU) GetArticlesByTitle(title string, isLimit bool, limit int) []*Article {
 	var arr []*Article = make([]*Article, 0)
 	for e := lru.Article_list.Front(); e != nil; e = e.Next() {
@@ -161,11 +145,11 @@ func (lru *LRU) GetArticlesByKeyword(keyword string, isLimit bool, limit int) []
 }
 
 // TODO add the cache aspect back lol
-func (lru *LRU) GetArticlesByCategory(categoryId string, isLimit bool, limit int) []*Article {
+func (lru *LRU) GetArticlesByCategory(category string, isLimit bool, limit int) []*Article {
 	var arr []*Article = make([]*Article, 0)
 	for e := lru.Article_list.Front(); e != nil; e = e.Next() {
 		article := e.Value.(*Article)
-		if article.Category_id == categoryId {
+		if article.Category == category {
 			arr = append(arr, article)
 		}
 		go func() {
@@ -176,4 +160,10 @@ func (lru *LRU) GetArticlesByCategory(categoryId string, isLimit bool, limit int
 		}
 	}
 	return arr
+}
+
+func CheckErr(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }

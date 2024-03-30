@@ -9,14 +9,16 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
+	c "github.com/EmilioChan27/Dist-Cache/common"
+	
 )
 
-var lru *LRU
+var lru *c.LRU
 
 func main() {
 	// keyVals := make(map[string]string)
 	keyVals := new(sync.Map)
-	lru = NewLRU(15)
+	lru = c.NewLRU(15)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -44,7 +46,7 @@ func main() {
 
 func GetArticles(w http.ResponseWriter, r *http.Request) {
 	limit := r.URL.Query().Get("limit")
-	var articles []*Article
+	var articles []*c.Article
 	enc := json.NewEncoder(w)
 	if limit == "" {
 		articles = lru.GetArticles(false, -1)
@@ -62,7 +64,7 @@ func GetArticles(w http.ResponseWriter, r *http.Request) {
 
 func GetArticleById(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
-	var article *Article
+	var article *c.Article
 	enc := json.NewEncoder(w)
 	if id == "" {
 		log.Fatal("Id couldn't be parsed from url in getArticleById")

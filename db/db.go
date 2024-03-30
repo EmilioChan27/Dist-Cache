@@ -1,5 +1,5 @@
 // Go connection Sample Code:
-package main
+package db
 
 import (
 	"context"
@@ -8,19 +8,26 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
+	"unsafe"
 
+	c "github.com/EmilioChan27/Dist-Cache/common"
 	_ "github.com/microsoft/go-mssqldb"
 )
 
-var db *sql.DB
-var server = "ec2736-db-server.database.windows.net"
-var port = 1433
-var user = "ec2736"
-var password = "E@4JtDWBkepmCXS"
-var database = "db"
+type DB struct {
+	InnerDB *sql.DB
+	Ctx     context.Context
+}
 
-func main() {
+func NewDB() *DB {
+	var db *sql.DB
+	var server = "ec2736-db-server.database.windows.net"
+	var port = 1433
+	var user = "ec2736"
+	var password = "E@4JtDWBkepmCXS"
+	var database = "db"
 	// Build connection string
 	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
 		server, user, password, port, database)
@@ -36,58 +43,40 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	fmt.Printf("Connected!\n")
-	createDeleteTest(25, "25x3m_2xcreate_2xdelete.txt", 180*time.Second)
-	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	// w.Header().Set("Access-Control-Allow-Origin", "*")
-	// 	_, err = CreateEmployee("Jake", "United States")
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	// count, err := ReadEmployees()
-	// 	// if err != nil {
-	// 	// 	log.Fatal("Error reading Employees: ", err.Error())
-	// 	// }
-	// 	_, err = DeleteEmployee("Nikita")
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	fmt.Fprintf(w, "added and deleted successfully\n")
-	// })
-	// fmt.Println("Server is running on port 8080...")
-	// http.ListenAndServe(":8080", nil)
-
-	// fmt.Printf("Read %d row(s) successfully.\n", count)
-
+	return &DB{InnerDB: db, Ctx: context.Background()}
 }
 
-func createDeleteTest(reps int, fileName string, pause time.Duration) {
-	file, err := os.Create(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for i := 0; i < reps; i++ {
-		time.Sleep(pause)
-		beforeTime := time.Now()
-		_, err := CreateEmployee("Jake", "United States")
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = CreateEmployee("Jake", "Germany")
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = DeleteEmployee("Nikita")
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = DeleteEmployee("Nikita")
-		if err != nil {
-			log.Fatal(err)
-		}
-		afterTime := time.Now()
-		executionTime := afterTime.Sub(beforeTime)
-		str := fmt.Sprintf("%v\n", executionTime)
-		file.WriteString(str)
+func getContentFromFile(file *os.File) []string {
+	fileInfo, err := file.Stat()
+	c.CheckErr(err)
+	length := fileInfo.Size()
+	byteOutput := make([]byte, length)
+	_, err = file.Read(byteOutput)
+	c.CheckErr(err)
+	strOutput := string(byteOutput)
+	strArrOutput := strings.Split(strOutput, "\\")
+	return strArrOutput[:len(strArrOutput)-1]
+}
+
+func getArticleTitle(content string) string {
+	titleUnTruncated := strings.Split(strings.Split(content, ":")[1], "\n")[0]
+	title := titleUnTruncated[:len(titleUnTruncated)-4]
+	return title
+}
+func getArticleCategory(content string) string {
+	return strings.Split(content, ":")[0][4:]
+}
+func (db *DB) InsertTestArticles(filename string, maxAuthorId int) {
+	file, err := os.Open(filename)
+	c.CheckErr(err)
+	contentArr := getContentFromFile(file)
+	for i, content := range contentArr {
+		title := getArticleTitle(content)
+		category := getArticleCategory(content)
+		a := &c.Article{Title: title, Content: content, ImageUrl: "Some random imageurl", Category: category, AuthorId: i % maxAuthorId}
+		newId, err := db.AddArticle(a)
+		c.CheckErr(err)
+		fmt.Printf("Newid: %d\n", newId)
 	}
 }
 
@@ -104,22 +93,6 @@ func concurrentCreateDeleteTest(reps int, fileName string) {
 			go func() {
 				// time.Sleep(interval)
 				beforeTime := time.Now()
-				_, err := CreateEmployee("Jake", "United States")
-				if err != nil {
-					log.Fatal(err)
-				}
-				_, err = CreateEmployee("Jake", "Germany")
-				if err != nil {
-					log.Fatal(err)
-				}
-				_, err = DeleteEmployee("Nikita")
-				if err != nil {
-					log.Fatal(err)
-				}
-				_, err = DeleteEmployee("Nikita")
-				if err != nil {
-					log.Fatal(err)
-				}
 				afterTime := time.Now()
 				executionTime := afterTime.Sub(beforeTime)
 				str := fmt.Sprintf("%v\n", executionTime)
@@ -134,53 +107,36 @@ func concurrentCreateDeleteTest(reps int, fileName string) {
 
 }
 
-func ConnectToDB() {
-	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
-		server, user, password, port, database)
+func (db *DB) checkDb() error {
 	var err error
-	// Create connection pool
-	db, err = sql.Open("sqlserver", connString)
-	if err != nil {
-		log.Fatal("Error creating connection pool: ", err.Error())
-	}
-	ctx := context.Background()
-	err = db.PingContext(ctx)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	fmt.Printf("Connected!\n")
-}
-
-func CreateEmployee(name string, location string) (int64, error) {
-	ctx := context.Background()
-	var err error
-
 	if db == nil {
 		err = errors.New("CreateEmployee: db is null")
-		return -1, err
+		return err
 	}
-
-	// Check if database is alive.
-	err = db.PingContext(ctx)
+	err = db.InnerDB.PingContext(db.Ctx)
 	if err != nil {
-		return -1, err
+		return err
 	}
+	return nil
+}
 
+func (db *DB) CreateAuthor(a *c.Author) (int64, error) {
+	err := db.checkDb()
+	c.CheckErr(err)
 	tsql := `
-      INSERT INTO TestSchema.Employees (Name, Location) VALUES (@Name, @Location);
+      INSERT INTO IWSchema.Authors (Name, Bio, Email, ImageUrl) VALUES (@Name, @Bio, @Email, @Imageurl);
       select isNull(SCOPE_IDENTITY(), -1);
     `
-
-	stmt, err := db.Prepare(tsql)
-	if err != nil {
-		return -1, err
-	}
+	stmt, err := db.InnerDB.Prepare(tsql)
+	c.CheckErr(err)
 	defer stmt.Close()
-
 	row := stmt.QueryRowContext(
-		ctx,
-		sql.Named("Name", name),
-		sql.Named("Location", location))
+		context.Background(),
+		sql.Named("Name", a.Name),
+		sql.Named("Bio", a.Bio),
+		sql.Named("Email", a.Email),
+		sql.Named("ImageUrl", a.ImageUrl),
+	)
 	var newID int64
 	err = row.Scan(&newID)
 	if err != nil {
@@ -188,64 +144,132 @@ func CreateEmployee(name string, location string) (int64, error) {
 	}
 
 	return newID, nil
+
 }
 
-func DeleteEmployee(name string) (int64, error) {
-	ctx := context.Background()
-
-	// Check if database is alive.
-	err := db.PingContext(ctx)
+func (db *DB) GetArticlesByCategory(category string) ([]*c.Article, error) {
+	err := db.checkDb()
+	c.CheckErr(err)
+	pattern := "%" + category + "%"
+	tsql := fmt.Sprintf(`DECLARE @CategoryPattern NVARCHAR(50) = '%s'
+	SELECT * FROM IWSchema.Articles WHERE Category LIKE @CategoryPattern;`, pattern)
+	rows, err := db.InnerDB.QueryContext(db.Ctx, tsql)
+	articleList := make([]*c.Article, 0)
 	if err != nil {
-		return -1, err
+		fmt.Println(err)
+		return articleList, err
 	}
-
-	tsql := fmt.Sprintf("DELETE FROM TestSchema.Employees WHERE Name = @Name;")
-
-	// Execute non-query with named parameters
-	result, err := db.ExecContext(ctx, tsql, sql.Named("Name", name))
-	if err != nil {
-		return -1, err
-	}
-
-	return result.RowsAffected()
-}
-
-// ReadEmployees reads all employee records
-func ReadEmployees() (int, error) {
-	ctx := context.Background()
-
-	// Check if database is alive.
-	err := db.PingContext(ctx)
-	if err != nil {
-		return -1, err
-	}
-
-	tsql := fmt.Sprintf("SELECT Id, Name, Location FROM TestSchema.Employees;")
-
-	// Execute query
-	rows, err := db.QueryContext(ctx, tsql)
-	if err != nil {
-		return -1, err
-	}
-
 	defer rows.Close()
-
 	var count int
-
-	// Iterate through the result set.
 	for rows.Next() {
-		var name, location string
-		var id int
-
-		// Get values from row.
-		err := rows.Scan(&id, &name, &location)
+		var a *c.Article = &c.Article{}
+		err := rows.Scan(&a.Id, &a.AuthorId, &a.Category, &a.Title, &a.ImageUrl, &a.Content, &a.CreatedAt, &a.UpdatedAt, &a.Likes, &a.Size)
 		if err != nil {
-			return -1, err
+			return make([]*c.Article, 0), err
 		}
-
-		// fmt.Printf("ID: %d, Name: %s, Location: %s\n", id, name, location)
+		articleList = append(articleList, a)
 		count++
 	}
-
-	return count, nil
+	fmt.Printf("Returning %d articles\n", count)
+	return articleList, nil
 }
+
+func (db *DB) AddArticle(a *c.Article) (int64, error) {
+	var err error
+	if db == nil {
+		err = errors.New("AddArticle: db is null")
+		return -1, err
+	}
+	err = db.InnerDB.PingContext(db.Ctx)
+	if err != nil {
+		return -1, err
+	}
+	tsql := `INSERT INTO IWSchema.Articles (AuthorId, Category, Title, ImageUrl, Content, CreatedAt, UpdatedAt, Likes, Size) VALUES(@AuthorId, @Category, @Title, @ImageUrl, @Content, @CreatedAt, @UpdatedAt, @Likes, @Size);
+	      select isNull(SCOPE_IDENTITY(), -1);
+	`
+	stmt, err := db.InnerDB.Prepare(tsql)
+	if err != nil {
+		return -1, err
+	}
+	defer stmt.Close()
+	row := stmt.QueryRowContext(
+		db.Ctx,
+		sql.Named("AuthorId", a.AuthorId),
+		sql.Named("Category", a.Category),
+		sql.Named("Title", a.Title),
+		sql.Named("ImageUrl", a.ImageUrl),
+		sql.Named("Content", a.Content),
+		sql.Named("CreatedAt", time.Now()),
+		sql.Named("UpdatedAt", time.Now()),
+		sql.Named("Likes", 0),
+		sql.Named("Size", int(unsafe.Sizeof(a))),
+	)
+	var newID int64
+	err = row.Scan(&newID)
+	if err != nil {
+		return -1, err
+	}
+
+	return newID, nil
+
+}
+
+// func DeleteEmployee(name string) (int64, error) {
+// 	ctx := context.Background()
+
+// 	// Check if database is alive.
+// 	err := db.PingContext(ctx)
+// 	if err != nil {
+// 		return -1, err
+// 	}
+
+// 	tsql := fmt.Sprintf("DELETE FROM TestSchema.Employees WHERE Name = @Name;")
+
+// 	// Execute non-query with named parameters
+// 	result, err := db.ExecContext(ctx, tsql, sql.Named("Name", name))
+// 	if err != nil {
+// 		return -1, err
+// 	}
+
+// 	return result.RowsAffected()
+// }
+
+// ReadEmployees reads all employee records
+// func ReadEmployees() (int, error) {
+// 	ctx := context.Background()
+
+// 	// Check if database is alive.
+// 	err := db.PingContext(ctx)
+// 	if err != nil {
+// 		return -1, err
+// 	}
+
+// 	tsql := fmt.Sprintf("SELECT Id, Name, Location FROM TestSchema.Employees;")
+
+// 	// Execute query
+// 	rows, err := db.QueryContext(ctx, tsql)
+// 	if err != nil {
+// 		return -1, err
+// 	}
+
+// 	defer rows.Close()
+
+// 	var count int
+
+// 	// Iterate through the result set.
+// 	for rows.Next() {
+// 		var name, location string
+// 		var id int
+
+// 		// Get values from row.
+// 		err := rows.Scan(&id, &name, &location)
+// 		if err != nil {
+// 			return -1, err
+// 		}
+
+// 		// fmt.Printf("ID: %d, Name: %s, Location: %s\n", id, name, location)
+// 		count++
+// 	}
+
+// 	return count, nil
+// }
