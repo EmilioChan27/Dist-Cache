@@ -2,7 +2,9 @@ package common
 
 import (
 	"container/list"
+	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -36,132 +38,212 @@ type Category struct {
 	Name string
 }
 
+type Stats struct {
+	coldHits int
+	misses   int
+	hotHits  int
+}
 type Cache struct {
 	sync.RWMutex
-	lru       *LRU
-	la        *LatencyAware
+	hot       *LRU
+	cold      *LRU
+	dbTime    time.Time
+	writes    list.List
 	inBuffer  []*Article
 	outBuffer []*Article
+	stats     *Stats
 }
 
 type LRU struct {
-	Capacity     int
-	Curr_size    int
-	Article_list *list.List
-	IdToArticle  map[string]*list.Element
-}
-type LatencyAware struct {
-	Capacity int
+	Capacity    int
+	Size        int
+	ArticleList *list.List
+	IdToArticle map[int]*list.Element
 }
 
-func NewCache(LRUCapacity int, LatencyAwareCapacity int, bufferSize int) *Cache {
-	return &Cache{lru: NewLRU(LRUCapacity), la: NewLatencyAware(LatencyAwareCapacity), inBuffer: make([]*Article, bufferSize), outBuffer: make([]*Article, bufferSize)}
-}
-func NewLatencyAware(capacity int) *LatencyAware {
-	return &LatencyAware{Capacity: capacity}
+func NewCache(hotCapacity int, coldCapacity int, bufferSize int) *Cache {
+	return &Cache{hot: NewLRU(hotCapacity), cold: NewLRU(coldCapacity), inBuffer: make([]*Article, bufferSize), outBuffer: make([]*Article, bufferSize), writes: *list.New().Init(), dbTime: time.Now(), stats: &Stats{}}
 }
 
 func NewLRU(capacity int) *LRU {
-	return &LRU{Capacity: capacity, Curr_size: 0, Article_list: list.New(), IdToArticle: make(map[string]*list.Element)}
+	return &LRU{Capacity: capacity, Size: 0, ArticleList: list.New(), IdToArticle: make(map[int]*list.Element)}
 }
 
-func (lru *LRU) SetObjects(objects []*list.Element) {
-	for _, e := range objects {
-		lru.Article_list.MoveToFront(e)
+func (lru *LRU) Move(object *list.Element) {
+	lru.ArticleList.MoveToFront(object)
+}
+
+// adds a new article to the LRU and returns the list element that was removed to add it (or nil if none)
+func (lru *LRU) Add(a *Article) *list.Element {
+	var outgoingElem *list.Element
+	if lru.Capacity <= lru.Size {
+		// fmt.Println("in add, the capacity is too much")
+		outgoingElem = lru.ArticleList.Back()
+		// fmt.Printf("Am removing article %d\n", outgoingElem.Value.(*Article).Id)
+		lru.Remove(outgoingElem.Value.(*Article))
+	}
+	elem := lru.ArticleList.PushFront(a)
+	lru.IdToArticle[a.Id] = elem
+	lru.Size++
+	return outgoingElem
+}
+
+func (lru *LRU) Remove(a *Article) {
+	if elem, found := lru.IdToArticle[a.Id]; found {
+		delete(lru.IdToArticle, a.Id)
+		lru.ArticleList.Remove(elem)
+		lru.Size--
+	}
+}
+func (c *Cache) coldToHot(a *Article) {
+	c.cold.Remove(a)
+	oldHotElem := c.hot.Add(a)
+	if oldHotElem != nil {
+		c.cold.Add(oldHotElem.Value.(*Article))
 	}
 }
 
-func (lru *LRU) SetObject(object *list.Element) {
-	lru.Article_list.MoveToFront(object)
+func (c *Cache) GetArticleById(id int) *Article {
+	hot := c.hot
+	if elem, found := hot.IdToArticle[id]; found {
+		hot.Move(elem)
+		return elem.Value.(*Article)
+	}
+	cold := c.cold
+	if elem, found := cold.IdToArticle[id]; found {
+		c.coldToHot(elem.Value.(*Article))
+		return elem.Value.(*Article)
+	}
+	return nil
 }
 
-// TODO add the la back in
-func (c *Cache) GetArticleById(id string) *Article {
-	lru := c.lru
-	if val, found := lru.IdToArticle[id]; found {
-		lru.Article_list.MoveToFront(val)
-		return val.Value.(*Article)
+func (c *Cache) ModifyArticle(a *Article) bool {
+	hot := c.hot
+	if elem, found := hot.IdToArticle[a.Id]; found {
+		elem.Value = a
+		hot.Move(elem)
+		return true
+	}
+	cold := c.cold
+	if elem, found := cold.IdToArticle[a.Id]; found {
+		elem.Value = a
+		c.coldToHot(elem.Value.(*Article))
+		return true
+	}
+	return true
+}
+
+// returns all articles whose categories match a certain pattern BUT MIGHT NOT RETURN AS MANY AS THEY WANT
+func (c *Cache) GetArticlesByCategory(category string, limit int, isLimit bool) []*Article {
+	articleList := make([]*Article, limit)
+	l := c.hot.ArticleList
+	index := 0
+	for e := l.Front(); e != nil; e = e.Next() {
+		if isLimit && index == limit {
+			// fmt.Println("Returning articles early in hot")
+			return articleList
+		}
+		if strings.Contains(e.Value.(*Article).Category, category) {
+			articleList[index] = e.Value.(*Article)
+			index++
+		}
+	}
+	l = c.cold.ArticleList
+	for e := l.Front(); e != nil; e = e.Next() {
+		if isLimit && index == limit {
+			// fmt.Println("Returning articles early in cold")
+			return articleList
+		}
+		if strings.Contains(e.Value.(*Article).Category, category) {
+			articleList[index] = e.Value.(*Article)
+			index++
+		}
+	}
+	// fmt.Printf("returning %d articles\n", index)
+	if index == limit {
+		return articleList
+	}
+	return articleList[:index]
+}
+
+// we know that since it's a write-through cache, the most recent stuff will definitely be in the cache
+// func (c *Cache) GetBreakingNewsArticles(limit int, isLimit bool) []*Article {
+
+// }
+
+func (c *Cache) GetArticlesByFieldQuery(field string, query string, limit int, isLimit bool) []*Article {
+	articleList := make([]*Article, limit)
+	l := c.hot.ArticleList
+	index := 0
+	for e := l.Front(); e != nil; e = e.Next() {
+		if isLimit && index == limit {
+			return articleList
+		}
+		refArticle := reflect.ValueOf(e.Value.(*Article))
+		valOfStringField := reflect.Indirect(refArticle).FieldByName(field)
+		strVal := string(valOfStringField.String())
+		if strings.Contains(strVal, query) {
+			articleList[index] = e.Value.(*Article)
+			index++
+		}
+	}
+	// then go through the cold cache
+	l = c.cold.ArticleList
+	for e := l.Front(); e != nil; e = e.Next() {
+		if isLimit && index == limit {
+			return articleList
+		}
+		refArticle := reflect.ValueOf(e.Value.(*Article))
+		valOfStringField := reflect.Indirect(refArticle).FieldByName(field)
+		strVal := string(valOfStringField.String())
+		if strings.Contains(strVal, query) {
+			articleList[index] = e.Value.(*Article)
+			index++
+		}
+	}
+	if index == limit {
+		return articleList
+	}
+	return articleList[:index]
+}
+
+func (c *Cache) Add(a *Article) {
+	c.Lock()
+	defer c.Unlock()
+	if elem, found := c.hot.IdToArticle[a.Id]; found {
+		c.hot.Move(elem)
+		return
+	}
+	if elem, found := c.cold.IdToArticle[a.Id]; found {
+		c.coldToHot(elem.Value.(*Article))
+		return
+	}
+	if c.hot.Size < c.hot.Capacity {
+		c.hot.Add(a)
 	} else {
-		return nil
-	}
-
-}
-
-// no need to do any caching because it's accessing the whole cache lmao
-// TODO add the la section
-func (c *Cache) GetArticles(isLimit bool, limit int) []*Article {
-	lru := c.lru
-	var arr []*Article = make([]*Article, 0)
-	for e := lru.Article_list.Front(); e != nil; e = e.Next() {
-		article := e.Value.(*Article)
-		arr = append(arr, article)
-		if isLimit {
-			go func() {
-				lru.SetObject(e)
-			}()
-		}
-		if isLimit && len(arr) == limit {
-			break
+		oldColdElem := c.cold.Add(a)
+		if oldColdElem != nil {
+			c.outBuffer = append(c.outBuffer, oldColdElem.Value.(*Article))
 		}
 	}
-
-	return arr
 }
-
-// TODO add the cache aspect back lol
-func (lru *LRU) GetArticlesByTitle(title string, isLimit bool, limit int) []*Article {
-	var arr []*Article = make([]*Article, 0)
-	for e := lru.Article_list.Front(); e != nil; e = e.Next() {
-		article := e.Value.(*Article)
-		if strings.Contains(article.Title, title) {
-			arr = append(arr, article)
-		}
-		go func() {
-			lru.SetObject(e)
-		}()
-		if isLimit && len(arr) == limit {
-			break
-		}
+func (c *Cache) ToString() {
+	l := c.hot.ArticleList
+	fmt.Printf("HOT size: %d\n", c.hot.Size)
+	fmt.Println("---------------------")
+	for e := l.Front(); e != nil; e = e.Next() {
+		fmt.Printf("Id: %d -> ", e.Value.(*Article).Id)
 	}
-	return arr
-}
-
-// TODO add the cache aspect back lol
-func (lru *LRU) GetArticlesByKeyword(keyword string, isLimit bool, limit int) []*Article {
-	var arr []*Article = make([]*Article, 0)
-	for e := lru.Article_list.Front(); e != nil; e = e.Next() {
-		article := e.Value.(*Article)
-		if strings.Contains(article.Content, keyword) {
-			arr = append(arr, article)
-		}
-		go func() {
-			lru.SetObject(e)
-		}()
-		if isLimit && len(arr) == limit {
-			break
-		}
+	fmt.Println("\n---------------------")
+	fmt.Printf("COLD size: %d\n", c.cold.Size)
+	fmt.Println("---------------------")
+	l = c.cold.ArticleList
+	for e := l.Front(); e != nil; e = e.Next() {
+		fmt.Printf("Id: %d -> ", e.Value.(*Article).Id)
 	}
-	return arr
+	fmt.Println()
+	fmt.Println("---------------------")
 }
-
-// TODO add the cache aspect back lol
-func (lru *LRU) GetArticlesByCategory(category string, isLimit bool, limit int) []*Article {
-	var arr []*Article = make([]*Article, 0)
-	for e := lru.Article_list.Front(); e != nil; e = e.Next() {
-		article := e.Value.(*Article)
-		if article.Category == category {
-			arr = append(arr, article)
-		}
-		go func() {
-			lru.SetObject(e)
-		}()
-		if isLimit && len(arr) == limit {
-			break
-		}
-	}
-	return arr
-}
-
 func CheckErr(err error) {
 	if err != nil {
 		log.Fatal(err)

@@ -147,31 +147,66 @@ func (db *DB) CreateAuthor(a *c.Author) (int64, error) {
 
 }
 
-func (db *DB) GetArticlesByCategory(category string) ([]*c.Article, error) {
+func (db *DB) GetArticleById(id int) (*c.Article, error) {
 	err := db.checkDb()
 	c.CheckErr(err)
+	tsql := fmt.Sprintf(`DECLARE @Id = %d
+	SELECT * FROM IWSchema.Articles WHERE Id = @Id`, id)
+	beforeTime := time.Now()
+	row, err := db.InnerDB.QueryContext(db.Ctx, tsql)
+	fmt.Printf("True DB exec Time: %v\n", time.Since(beforeTime))
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	defer row.Close()
+	// beforeTime = time.Now()
+	var a *c.Article = &c.Article{}
+	for row.Next() {
+		err = row.Scan(&a.Id, &a.AuthorId, &a.Category, &a.Title, &a.ImageUrl, &a.Content, &a.CreatedAt, &a.UpdatedAt, &a.Likes, &a.Size)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// fmt.Printf("Scan time: %v\n", time.Since(beforeTime))
+	return a, nil
+}
+
+func (db *DB) GetArticlesByCategory(category string, limit int) ([]*c.Article, error) {
+	err := db.checkDb()
+	c.CheckErr(err)
+	limitStr := ""
+	if limit != -1 {
+		limitStr = fmt.Sprintf("TOP %d", limit)
+	}
 	pattern := "%" + category + "%"
 	tsql := fmt.Sprintf(`DECLARE @CategoryPattern NVARCHAR(50) = '%s'
-	SELECT * FROM IWSchema.Articles WHERE Category LIKE @CategoryPattern;`, pattern)
+	SELECT %s* FROM IWSchema.Articles WHERE Category LIKE @CategoryPattern ORDER BY UpdatedAt DESC;`, pattern, limitStr)
+	beforeTime := time.Now()
 	rows, err := db.InnerDB.QueryContext(db.Ctx, tsql)
-	articleList := make([]*c.Article, 0)
+	fmt.Printf("True DB exec Time: %v\n", time.Since(beforeTime))
+	articleList := make([]*c.Article, limit)
 	if err != nil {
 		fmt.Println(err)
 		return articleList, err
 	}
 	defer rows.Close()
 	var count int
+	// beforeTime = time.Now()
+	index := 0
 	for rows.Next() {
 		var a *c.Article = &c.Article{}
 		err := rows.Scan(&a.Id, &a.AuthorId, &a.Category, &a.Title, &a.ImageUrl, &a.Content, &a.CreatedAt, &a.UpdatedAt, &a.Likes, &a.Size)
 		if err != nil {
 			return make([]*c.Article, 0), err
 		}
-		articleList = append(articleList, a)
+		articleList[index] = a
+		index++
 		count++
 	}
-	fmt.Printf("Returning %d articles\n", count)
-	return articleList, nil
+	// fmt.Printf("Scanning time: %v\n", time.Since(beforeTime))
+	// fmt.Printf("Returning %d articles\n", count)
+	return articleList[:index], nil
 }
 
 func (db *DB) AddArticle(a *c.Article) (int64, error) {
@@ -209,11 +244,8 @@ func (db *DB) AddArticle(a *c.Article) (int64, error) {
 	if err != nil {
 		return -1, err
 	}
-
 	return newID, nil
-
 }
-
 // func DeleteEmployee(name string) (int64, error) {
 // 	ctx := context.Background()
 
