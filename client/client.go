@@ -33,7 +33,7 @@ func main() {
 	for i := 0; i < 10; i++ {
 		fmt.Printf("In the %dth operation\n", i)
 		time.Sleep(1 * time.Second)
-		beforeTime := time.Now()
+		// beforeTime := time.Now()
 		var res *http.Response
 		var err error
 		if i%9 == 0 {
@@ -64,7 +64,7 @@ func main() {
 			res, err = http.Get(serverUrl + "article?id=3")
 			fmt.Println("Get By ID")
 		}
-		execTime := time.Since(beforeTime)
+		// execTime := time.Since(beforeTime)
 		if err != nil {
 			log.Fatal(err)
 		}
