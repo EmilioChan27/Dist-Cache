@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	c "github.com/EmilioChan27/Dist-Cache/common"
@@ -30,10 +29,7 @@ func main() {
 	// } else {
 	// 	fmt.Println(string(body))
 	// }
-	file, err := os.Create("2m_output.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
+	serverUrl := "http://LX-Server:8080/"
 	for i := 0; i < 10; i++ {
 		fmt.Printf("In the %dth operation\n", i)
 		time.Sleep(1 * time.Second)
@@ -41,35 +37,34 @@ func main() {
 		var res *http.Response
 		var err error
 		if i%9 == 0 {
-			res, err = http.Get("http://localhost:8080/human-interest?limit=100")
+			res, err = http.Get(serverUrl + "human-interest?limit=100")
 			fmt.Println("human interest")
 		} else if i%8 == 0 {
-			res, err = http.Get("http://localhost:8080/business?limit=100")
+			res, err = http.Get(serverUrl + "business?limit=100")
 			fmt.Println("business")
 		} else if i%7 == 0 {
-			res, err = http.Get("http://localhost:8080/international-affairs?limit=100")
+			res, err = http.Get(serverUrl + "international-affairs?limit=100")
 			fmt.Println("international affairs")
 		} else if i%6 == 0 {
-			res, err = http.Get("http://localhost:8080/science-technology?limit=100")
+			res, err = http.Get(serverUrl + "science-technology?limit=100")
 			fmt.Println("science and technology")
 		} else if i%5 == 0 {
-			res, err = http.Get("http://localhost:8080/arts-culture?limit=100")
+			res, err = http.Get(serverUrl + "arts-culture?limit=100")
 			fmt.Println("arts and culture")
 		} else if i%4 == 0 {
-			res, err = http.Get("http://localhost:8080/politics?limit=100")
+			res, err = http.Get(serverUrl + "politics?limit=100")
 			fmt.Println("politics")
 		} else if i%3 == 0 {
-			res, err = http.Get("http://localhost:8080/sports?limit=100")
+			res, err = http.Get(serverUrl +"sports?limit=100")
 			fmt.Println("sports")
 		} else if i%2 == 0 {
-			res, err = http.Get("http://localhost:8080/breaking-news?limit=100")
+			res, err = http.Get(serverUrl + "breaking-news?limit=100")
 			fmt.Println("Breaking News")
 		} else {
-			res, err = http.Get("http://localhost:8080/article?id=3")
+			res, err = http.Get(serverUrl + "article?id=3")
 			fmt.Println("Get By ID")
 		}
 		execTime := time.Since(beforeTime)
-		file.WriteString(fmt.Sprintf("%v", execTime))
 		if err != nil {
 			log.Fatal(err)
 		}
