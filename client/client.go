@@ -32,7 +32,7 @@ func main() {
 	serverUrl := "http://LX-Server:8080/"
 	for i := 0; i < 10; i++ {
 		fmt.Printf("In the %dth operation\n", i)
-		time.Sleep(1 * time.Second)
+		time.Sleep(1 * time.Minute)
 		// beforeTime := time.Now()
 		var res *http.Response
 		var err error
@@ -55,7 +55,7 @@ func main() {
 			res, err = http.Get(serverUrl + "politics?limit=100")
 			fmt.Println("politics")
 		} else if i%3 == 0 {
-			res, err = http.Get(serverUrl +"sports?limit=100")
+			res, err = http.Get(serverUrl + "sports?limit=100")
 			fmt.Println("sports")
 		} else if i%2 == 0 {
 			res, err = http.Get(serverUrl + "breaking-news?limit=100")
