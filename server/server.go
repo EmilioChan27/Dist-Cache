@@ -236,7 +236,7 @@ func encodeArticles(w http.ResponseWriter, articles []*c.Article) {
 		}
 		// log.Fatal("BROHER AN ARTICEL IS NIL")
 	}
-	fmt.Printf("Num articles Encoded: %d\n", numArticlesEncoded)
+	// fmt.Printf("Num articles Encoded: %d\n", numArticlesEncoded)
 }
 
 func updateCache(articles []*c.Article) {
