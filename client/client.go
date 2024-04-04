@@ -31,11 +31,11 @@ func main() {
 	// }
 	serverUrl := "http://LX-Server:8080/"
 	fmt.Println("------------------")
-	fmt.Println("Waiting 1.5 minutes")
+	fmt.Println("Waiting 2 minutes")
 	fmt.Println("------------------")
 	for i := 0; i < 10; i++ {
 		fmt.Printf("In the %dth operation\n", i)
-		time.Sleep(90 * time.Second)
+		time.Sleep(120 * time.Second)
 		// beforeTime := time.Now()
 		var res *http.Response
 		var err error
