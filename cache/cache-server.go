@@ -1,94 +1,317 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"strconv"
+	"time"
 
 	c "github.com/EmilioChan27/Dist-Cache/common"
+	d "github.com/EmilioChan27/Dist-Cache/db"
 )
 
+// var numRequests int = 0
+var db *d.DB
 var cache *c.Cache
-
-// var serverUrl string = "http://LX-Server:8080/"
-var serverUrl string = "http://localhost:8000/"
+var coldCapacity int
+var hotCapacity int
+var timerDuration time.Duration
+var writeChanLen int
 
 func main() {
-	// keyVals := make(map[string]string)
-	cache = c.NewCache(5, 5, 1)
-	// articles := make([]*c.Article, 10)
-	// for i := 0; i < 10; i++ {
-	// 	a := &Article{Id: i, Category: "Human Interest", Content: "Today I went to the park", AuthorId: i}
-	// 	cache.Add(a)
-	// }
-
-	// http.HandleFunc("/front-page", getFrontPage)
-	// http.HandleFunc("/business", getBusinessArticles)
-	http.HandleFunc("/human-interest", getHumanInterestArticles)
-	// http.HandleFunc("/international-affairs", getInternationalAffairsArticles)
-	// http.HandleFunc("/science-technology", getScienceTechnologyArticles)
-	// http.HandleFunc("/get-all-articles", GetArticles)
-	// http.HandleFunc("/article", getArticleById)
-	fmt.Println("Cache server running on port :8080")
-	http.ListenAndServe("0.0.0.0:8080", nil)
-}
-
-func sendToServer(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("sending to server")
-	parsedServerUrl, err := url.Parse(serverUrl)
-	if err != nil {
-		log.Fatalf("error parsing serverUrl: %v\n", err)
-	}
-	//TODO reset the timer of the cache so that we know when the last database access was
-	server := httputil.NewSingleHostReverseProxy(parsedServerUrl)
-	server.ServeHTTP(w, r)
-
-}
-
-func getHumanInterestArticles(w http.ResponseWriter, r *http.Request) {
-	var articles []*c.Article
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	db = d.NewDB()
+	coldCapacity = 350
+	hotCapacity = 350
+	timerDuration = 60 * time.Second
+	writeChanLen = 75
+	cache = c.NewCache(coldCapacity, hotCapacity, 1, timerDuration, writeChanLen)
+	// // articles := make([]*c.Article, 10)
+	articles, err := db.GetNewestArticles(750)
 	if err != nil {
 		log.Fatal(err)
 	}
-	articles = cache.GetArticlesByCategory("Human Interest", limit, false)
+	for _, article := range articles {
+		cache.Add(article)
+	}
+	cache.ToString()
+
+	http.HandleFunc("/front-page", getFrontPageArticles)
+	http.HandleFunc("/business", getBusinessArticles)
+	http.HandleFunc("/human-interest", getHumanInterestArticles)
+	http.HandleFunc("/international-affairs", getInternationalAffairsArticles)
+	http.HandleFunc("/sports", getSportsArticles)
+	http.HandleFunc("/politics", getPoliticsArticles)
+	http.HandleFunc("/science-technology", getScienceTechnologyArticles)
+	http.HandleFunc("/breaking-news", getBreakingNewsArticles)
+	http.HandleFunc("/arts-culture", getArtsCultureArticles)
+	http.HandleFunc("/article", getArticleById)
+	http.HandleFunc("/write", writeHandler)
+	startTimer(cache)
+	fmt.Println("Server is running on port 8080...")
+	http.ListenAndServe(":8080", nil)
+}
+
+func startTimer(cache *c.Cache) {
+	go func(cache *c.Cache) {
+		for {
+			<-cache.DbTimer.C
+			write := cache.GetWrite()
+			if write != nil {
+				if write.Operation == "create" {
+					db.AddArticle(write.Article)
+				} else {
+					log.Fatal("Something went wrong - the operation isn't create lol")
+				}
+			} else {
+				fmt.Println("received no write")
+			}
+			cache.DbTimer.Reset(timerDuration)
+		}
+	}(cache)
+}
+
+// func getFrontPage(w http.ResponseWriter, r *http.Request) {
+
+// }
+
+//	func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
+//		articles, err := db.GetArticlesByCategory("Business")
+//		c.CheckErr(err)
+//		for _, a := range articles {
+//			writeArticleToFile(a, "output.txt")
+//		}
+//	}
+func writeHandler(w http.ResponseWriter, r *http.Request) {
+	dec := json.NewDecoder(r.Body)
+	var a *c.Article
+	err := dec.Decode(&a)
+	fmt.Println(*a)
+	c.CheckErr(err)
+	if r.Method == "PUT" {
+		oldWrite := cache.AddWrite(&c.Write{Operation: "Edit", Article: a})
+		if oldWrite != nil && oldWrite.Operation == "create" {
+			db.AddArticle(oldWrite.Article)
+		}
+	} else if r.Method == "POST" {
+		fmt.Println("am about to create a write")
+		cache.Add(a)
+		oldWrite := cache.AddWrite(&c.Write{Operation: "create", Article: a})
+		if oldWrite != nil && oldWrite.Operation == "create" {
+			db.AddArticle(oldWrite.Article)
+		}
+	} else {
+		log.Fatalf("Actually, the method was %v\n", r.Method)
+	}
+	// w.WriteHeader(201)
+}
+
+func getHumanInterestArticles(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	c.CheckErr(err)
+	articles := cache.GetArticlesByCategory("Human Interest", limit, true)
 	if len(articles) < limit {
-		sendToServer(w, r)
+		articles, err = db.GetArticlesByCategory("Human Interest", limit)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+
+	}
+	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		updateCache(articles)
+	} else {
+		// fmt.Println("Not updating the cache because the limit is too large")
+	}
+}
+func getInternationalAffairsArticles(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	c.CheckErr(err)
+	articles := cache.GetArticlesByCategory("International Affairs", limit, true)
+	if len(articles) < limit {
+		articles, err = db.GetArticlesByCategory("International Affairs", limit)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+
+	}
+	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		updateCache(articles)
+	} else {
+		// fmt.Println("Not updating the cache because the limit is too large")
+	}
+}
+func getSportsArticles(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	c.CheckErr(err)
+	articles := cache.GetArticlesByCategory("Sports", limit, true)
+	if len(articles) < limit {
+		articles, err = db.GetArticlesByCategory("Sports", limit)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+
+	}
+	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		updateCache(articles)
+	} else {
+		// fmt.Println("Not updating the cache because the limit is too large")
+	}
+}
+func getPoliticsArticles(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	c.CheckErr(err)
+	articles := cache.GetArticlesByCategory("Politics", limit, true)
+	if len(articles) < limit {
+		articles, err = db.GetArticlesByCategory("Politics", limit)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+
+	}
+	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		updateCache(articles)
+	} else {
+		// fmt.Println("Not updating the cache because the limit is too large")
+	}
+}
+func getScienceTechnologyArticles(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	c.CheckErr(err)
+	articles := cache.GetArticlesByCategory("Politics", limit, true)
+	if len(articles) < limit {
+		articles, err = db.GetArticlesByCategory("Politics", limit)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+
+	}
+	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		updateCache(articles)
+	} else {
+		// fmt.Println("Not updating the cache because the limit is too large")
+	}
+}
+func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	c.CheckErr(err)
+	articles := cache.GetArticlesByCategory("Politics", limit, true)
+	if len(articles) < limit {
+		articles, err = db.GetArticlesByCategory("Politics", limit)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+
+	}
+	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		updateCache(articles)
+	} else {
+		// fmt.Println("Not updating the cache because the limit is too large")
+	}
+}
+func getFrontPageArticles(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	c.CheckErr(err)
+	articles := cache.GetArticlesByCategory("Politics", limit, true)
+	if len(articles) < limit {
+		articles, err = db.GetArticlesByCategory("Politics", limit)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+
+	}
+	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		updateCache(articles)
+	} else {
+		// fmt.Println("Not updating the cache because the limit is too large")
+	}
+}
+func getBreakingNewsArticles(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	c.CheckErr(err)
+	articles := cache.GetArticlesByCategory("Breaking News", limit, true)
+	if len(articles) < limit {
+		articles, err = db.GetArticlesByCategory("Breaking News", limit)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+
+	}
+	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		updateCache(articles)
+	} else {
+		// fmt.Println("Not updating the cache because the limit is too large")
+	}
+}
+func getArtsCultureArticles(w http.ResponseWriter, r *http.Request) {
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	c.CheckErr(err)
+	articles := cache.GetArticlesByCategory("Arts and Culture", limit, true)
+	if len(articles) < limit {
+		articles, err = db.GetArticlesByCategory("Arts and Culture", limit)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+
+	}
+	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		updateCache(articles)
+	} else {
+		// fmt.Println("Not updating the cache because the limit is too large")
 	}
 }
 
-// func GetArticles(w http.ResponseWriter, r *http.Request) {
-// 	limit := r.URL.Query().Get("limit")
-// 	var articles []*c.Article
-// 	enc := json.NewEncoder(w)
-// 	if limit == "" {
-// 		articles = lru.GetArticles(false, -1)
-// 	} else {
-// 		intLimit, err := strconv.Atoi(limit)
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
-// 		articles = lru.GetArticles(true, intLimit)
-// 	}
-// 	for _, article := range articles {
-// 		enc.Encode(article)
-// 	}
-// }
+func getArticleById(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	c.CheckErr(err)
+	article := cache.GetArticleById(id)
+	if article == nil {
+		article, err = db.GetArticleById(id)
+		c.CheckErr(err)
+		cache.ResetTimer(timerDuration)
+	}
+	articles := make([]*c.Article, 1)
+	articles[0] = article
+	encodeArticles(w, articles)
+	updateCache(articles)
+}
 
-// func GetArticleById(w http.ResponseWriter, r *http.Request) {
-// 	id := r.URL.Query().Get("id")
-// 	var article *c.Article
-// 	enc := json.NewEncoder(w)
-// 	if id == "" {
-// 		log.Fatal("Id couldn't be parsed from url in getArticleById")
+func encodeArticles(w http.ResponseWriter, articles []*c.Article) {
+	enc := json.NewEncoder(w)
+	numArticlesEncoded := 0
+	for _, a := range articles {
+		if a != nil {
+			enc.Encode(a)
+			numArticlesEncoded++
+		}
+		// log.Fatal("BROHER AN ARTICEL IS NIL")
+	}
+	// fmt.Printf("Num articles Encoded: %d\n", numArticlesEncoded)
+}
+
+func updateCache(articles []*c.Article) {
+	for i := len(articles) - 1; i >= 0; i-- {
+		cache.Add(articles[i])
+	}
+}
+
+// func writeArticleToFile(a *c.Article, filename string) {
+// 	var file *os.File
+// 	_, err := os.Stat(filename)
+// 	if os.IsNotExist(err) {
+// 		file, err = os.Create(filename)
 // 	} else {
-// 		article = lru.GetArticleById(id)
-// 		if article == nil {
-// 			log.Fatalf("article with id %s couldn't be found\n", id)
-// 		}
-// 		enc.Encode(article)
+// 		file, err = os.Open(filename)
 // 	}
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer file.Close()
+// 	file.WriteString("----------------------")
+// 	file.WriteString(fmt.Sprintf("Title: %s\n", a.Title))
+// 	file.WriteString(fmt.Sprintf("Category: %s\n", a.Category))
+// 	file.WriteString(fmt.Sprintf("Author: %d\n", a.AuthorId))
+// 	file.WriteString(fmt.Sprintf("Content Preview: %s\n", a.Content[:10]))
+// 	file.WriteString(fmt.Sprintf("Created At: %v\n", a.CreatedAt))
+// 	file.WriteString("-------------------------------")
 // }

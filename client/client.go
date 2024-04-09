@@ -1,184 +1,132 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	c "github.com/EmilioChan27/Dist-Cache/common"
 )
 
 func main() {
-	// params := url.Values{}
-	// params.Add("id", fmt.Sprint(1))
-	// url := "http://LX-Server:8080/"
-	// // + "?" + params.Encode()
-	// fmt.Println("About to make request")
-	// res, err := http.Get(url)
-	// fmt.Println("Just made request")
-	// if err != nil {
-	// 	fmt.Println("Error", err)
-	// 	return
-	// }
-	// defer res.Body.Close()
-	// body, err := io.ReadAll(res.Body)
-	// if err != nil {
-	// 	fmt.Println("something went wrong, ", err)
-	// } else {
-	// 	fmt.Println(string(body))
-	// }
-	serverUrl := "http://LX-Server:8080/"
+	getArticleById(2)
+	// latencyTest()
+}
+
+// func editArticleById(a *c.Article) {
+// 	serverUrl := "http://localhost:8080/"
+// 	fmt.Println("------------------")
+// 	var res *http.Response
+// 	a = &c.Article{Id: a.Id, AuthorId: a.AuthorId, Content: "new-content", Category: a.Category, Title: a.Title, ImageUrl: a.ImageUrl, Likes: a.Likes, Size: a.Size}
+// 	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
+// 	values := map[string]interface{}{"Id": a.Id, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
+// 	jsonValue, _ := json.Marshal(values)
+// 	res, err := http.(serverUrl+"write", "applicatio/json", bytes.NewBuffer(jsonValue))
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Printf("res: %v\n", res)
+// }
+
+func getArticleById(id int) {
+	serverUrl := "http://localhost:8080/"
 	fmt.Println("------------------")
-	fmt.Println("Waiting 5 minutes")
-	fmt.Println("------------------")
-	for i := 0; i < 10; i++ {
-		fmt.Printf("In the %dth operation\n", i)
-		time.Sleep(450 * time.Second)
-		// beforeTime := time.Now()
-		var res *http.Response
-		var err error
-		if i%9 == 0 {
-			res, err = http.Get(serverUrl + "human-interest?limit=100")
-			fmt.Println("human interest")
-		} else if i%8 == 0 {
-			res, err = http.Get(serverUrl + "business?limit=100")
-			fmt.Println("business")
-		} else if i%7 == 0 {
-			res, err = http.Get(serverUrl + "international-affairs?limit=100")
-			fmt.Println("international affairs")
-		} else if i%6 == 0 {
-			res, err = http.Get(serverUrl + "science-technology?limit=100")
-			fmt.Println("science and technology")
-		} else if i%5 == 0 {
-			res, err = http.Get(serverUrl + "arts-culture?limit=100")
-			fmt.Println("arts and culture")
-		} else if i%4 == 0 {
-			res, err = http.Get(serverUrl + "politics?limit=100")
-			fmt.Println("politics")
-		} else if i%3 == 0 {
-			res, err = http.Get(serverUrl + "sports?limit=100")
-			fmt.Println("sports")
-		} else if i%2 == 0 {
-			res, err = http.Get(serverUrl + "breaking-news?limit=100")
-			fmt.Println("Breaking News")
-		} else {
-			res, err = http.Get(serverUrl + "article?id=3")
-			fmt.Println("Get By ID")
-		}
-		// execTime := time.Since(beforeTime)
+	var res *http.Response
+	urlEnd := fmt.Sprintf("article?id=%d", id)
+	res, err := http.Get(serverUrl + urlEnd)
+	fmt.Println("Get By ID")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	dec := json.NewDecoder(res.Body)
+	defer res.Body.Close()
+	// articles := make([]*c.Article, 0)
+	numArticles := 0
+	for dec.More() {
+		var a *c.Article
+		err = dec.Decode(&a)
+		fmt.Println(a)
 		if err != nil {
 			log.Fatal(err)
 		}
-		dec := json.NewDecoder(res.Body)
-		defer res.Body.Close()
-		// articles := make([]*c.Article, 0)
-		numArticles := 0
-		for dec.More() {
-			var a c.Article
-			err = dec.Decode(&a)
-			if err != nil {
-				log.Fatal(err)
-			}
-			numArticles++
-			// fmt.Printf("Id: %d\n", a.Id)
-			// articles = append(articles, a)
-		}
-		fmt.Printf("Num articles: %d\n", numArticles)
+		numArticles++
+		// fmt.Printf("Id: %d\n", a.Id)
+		// articles = append(articles, a)
 	}
-	// for _, a := range articles {
-	// 	fmt.Printf("Id: %d\n", a.Id)
-	// }
-	// for i := 0; i < 10; i++ {
-	// 	time.Sleep(6 * time.Second)
-	// 	_, err := http.Get("http://localhost:8080/business")
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	time.Sleep(6 * time.Second)
-	// 	_, err = http.Get("http://localhost:8080/human-interest")
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	time.Sleep(6 * time.Second)
-	// 	_, err = http.Get("http://localhost:8080/science-technology")
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
+	fmt.Printf("Num articles: %d\n", numArticles)
 
-	// 	time.Sleep(6 * time.Second)
-	// 	_, err = http.Get("http://localhost:8080/international-affairs")
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }
+}
 
-	//	file, err := os.Create("1.375m_create_delete.txt")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// for i := 0; i < 25; i++ {
-	// 	time.Sleep(83 * time.Second)
-	// 	beforeTime := time.Now()
-	// 	res, err := http.Get("http://localhost:8080/")
-	// 	if err != nil {
-	// 		log.Fatal("Error reading Employees: ", err.Error())
+func latencyTest() {
+	serverUrl := "http://localhost:8080/"
+	fmt.Println("------------------")
+	var res *http.Response
+	a := &c.Article{Id: 50000, AuthorId: 1, Content: "content", Category: "International Affairs", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
+	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
+	values := map[string]interface{}{"Id": a.Id, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
+	jsonValue, _ := json.Marshal(values)
+	res, err := http.Post(serverUrl+"write", "applicatio/json", bytes.NewBuffer(jsonValue))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("res: %v\n", res)
+	// fmt.Println("Waiting 5 minutes")
+	// fmt.Println("------------------")
+	// for i := 0; i < 11; i++ {
+	// 	fmt.Printf("In the %dth operation\n", i)
+	// 	time.Sleep(450 * time.Second)
+	// 	// beforeTime := time.Now()
+	// 	var res *http.Response
+	// 	var err error
+	// 	if i%9 == 0 {
+	// 		res, err = http.Get(serverUrl + "human-interest?limit=100")
+	// 		fmt.Println("human interest")
+	// 	} else if i%8 == 0 {
+	// 		res, err = http.Get(serverUrl + "business?limit=100")
+	// 		fmt.Println("business")
+	// 	} else if i%7 == 0 {
+	// 		res, err = http.Get(serverUrl + "international-affairs?limit=100")
+	// 		fmt.Println("international affairs")
+	// 	} else if i%6 == 0 {
+	// 		res, err = http.Get(serverUrl + "science-technology?limit=100")
+	// 		fmt.Println("science and technology")
+	// 	} else if i%5 == 0 {
+	// 		res, err = http.Get(serverUrl + "arts-culture?limit=100")
+	// 		fmt.Println("arts and culture")
+	// 	} else if i%4 == 0 {
+	// 		res, err = http.Get(serverUrl + "politics?limit=100")
+	// 		fmt.Println("politics")
+	// 	} else if i%3 == 0 {
+	// 		res, err = http.Get(serverUrl + "sports?limit=100")
+	// 		fmt.Println("sports")
+	// 	} else if i%2 == 0 {
+	// 		res, err = http.Get(serverUrl + "breaking-news?limit=100")
+	// 		fmt.Println("Breaking News")
+	// 	} else {
+	// 		res, err = http.Get(serverUrl + "article?id=3")
+	// 		fmt.Println("Get By ID")
 	// 	}
-	// 	afterTime := time.Now()
-	// 	executionTime := afterTime.Sub(beforeTime)
-	// 	_, err = io.ReadAll(res.Body)
+	// 	// execTime := time.Since(beforeTime)
 	// 	if err != nil {
 	// 		log.Fatal(err)
 	// 	}
-	// 	str := fmt.Sprintf("Execution time: %v\n", executionTime)
-	// 	res.Body.Close()
-	// 	file.WriteString(str)
-	// 	// fmt.Println(str)
-	// }
-	// resChanLen := 100
-	// resChan := make(chan string, resChanLen)
-	// for i := 0; i < resChanLen; i++ {
-	// 	go func(index int) {
-	// 		params := url.Values{}
-	// 		params.Add("id", fmt.Sprint(index))
-	// 		url := "http://LX-Cache:8080/" + "?" + params.Encode()
-	// 		res, err := http.Get(url)
+	// 	dec := json.NewDecoder(res.Body)
+	// 	defer res.Body.Close()
+	// 	// articles := make([]*c.Article, 0)
+	// 	numArticles := 0
+	// 	for dec.More() {
+	// 		var a c.Article
+	// 		err = dec.Decode(&a)
 	// 		if err != nil {
-	// 			fmt.Println("Error", err)
-	// 			return
+	// 			log.Fatal(err)
 	// 		}
-	// 		defer res.Body.Close()
-	// 		body, err := io.ReadAll(res.Body)
-	// 		if err != nil {
-	// 			fmt.Println("something went wrong, ", err)
-	// 		}
-	// 		// fmt.Println(string(body))
-	// 		resChan <- string(body)
-	// 		// fmt.Printf("received output from server from request %d\n", index)
-	// 	}(i)
-	// }
-	// for i := 0; i < resChanLen; i++ {
-	// 	s := <-resChan
-	// 	fmt.Println(s)
-	// }
-	// for s := range resChan {
-	// 	fmt.Println(s)
-	// 	if len(resChan) == 0 {
-	// 		break
+	// 		numArticles++
+	// 		// fmt.Printf("Id: %d\n", a.Id)
+	// 		// articles = append(articles, a)
 	// 	}
-	// }
-	// resReader := bufio.NewReader(res.Body)
-	// for {
-	// 	line, err := resReader.ReadBytes('\n')
-
-	// 	if err != nil {
-	// 		if err == io.EOF {
-	// 			break
-	// 		}
-	// 		fmt.Println("Error reading line:", err)
-	// 		break
-	// 	}
-	// 	fmt.Println("Received Event: ", string(line))
+	// 	fmt.Printf("Num articles: %d\n", numArticles)
 	// }
 }

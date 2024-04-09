@@ -47,11 +47,16 @@ type Cache struct {
 	sync.RWMutex
 	hot       *LRU
 	cold      *LRU
-	dbTime    time.Time
-	writes    list.List
+	DbTimer   *time.Timer
+	writes    chan (*Write)
 	inBuffer  []*Article
 	outBuffer []*Article
 	stats     *Stats
+}
+
+type Write struct {
+	Operation string   // create or edit or delete
+	Article   *Article // the articles in question
 }
 
 type LRU struct {
@@ -61,8 +66,8 @@ type LRU struct {
 	IdToArticle map[int]*list.Element
 }
 
-func NewCache(hotCapacity int, coldCapacity int, bufferSize int) *Cache {
-	return &Cache{hot: NewLRU(hotCapacity), cold: NewLRU(coldCapacity), inBuffer: make([]*Article, bufferSize), outBuffer: make([]*Article, bufferSize), writes: *list.New().Init(), dbTime: time.Now(), stats: &Stats{}}
+func NewCache(hotCapacity int, coldCapacity int, bufferSize int, timerDuration time.Duration, writeChanLen int) *Cache {
+	return &Cache{hot: NewLRU(hotCapacity), cold: NewLRU(coldCapacity), inBuffer: make([]*Article, bufferSize), outBuffer: make([]*Article, bufferSize), writes: make(chan *Write, writeChanLen), DbTimer: time.NewTimer(timerDuration), stats: &Stats{}}
 }
 
 func NewLRU(capacity int) *LRU {
@@ -71,6 +76,17 @@ func NewLRU(capacity int) *LRU {
 
 func (lru *LRU) Move(object *list.Element) {
 	lru.ArticleList.MoveToFront(object)
+}
+
+func (c *Cache) ResetTimer(duration time.Duration) {
+	c.DbTimer.Reset(duration)
+}
+
+func (c *Cache) GetWrite() *Write {
+	if len(c.writes) == 0 {
+		return nil
+	}
+	return <-c.writes
 }
 
 // adds a new article to the LRU and returns the list element that was removed to add it (or nil if none)
@@ -227,6 +243,18 @@ func (c *Cache) Add(a *Article) {
 		}
 	}
 }
+
+func (c *Cache) AddWrite(w *Write) *Write {
+	fmt.Println("about to add a write inside of caceh")
+	var write *Write
+	if len(c.writes) == cap(c.writes) {
+		write = <-c.writes
+	}
+	c.writes <- w
+	// fmt.Println("just added a write inside of cache")
+	return write
+}
+
 func (c *Cache) ToString() {
 	l := c.hot.ArticleList
 	fmt.Printf("HOT size: %d\n", c.hot.Size)

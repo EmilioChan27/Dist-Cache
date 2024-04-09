@@ -150,10 +150,9 @@ func (db *DB) CreateAuthor(a *c.Author) (int64, error) {
 func (db *DB) GetArticleById(id int) (*c.Article, error) {
 	err := db.checkDb()
 	c.CheckErr(err)
-	tsql := fmt.Sprintf(`DECLARE @Id = %d
-	SELECT * FROM IWSchema.Articles WHERE Id = @Id`, id)
+	tsql := `SELECT * FROM IWSchema.Articles WHERE Id = @Id`
 	beforeTime := time.Now()
-	row, err := db.InnerDB.QueryContext(db.Ctx, tsql)
+	row, err := db.InnerDB.QueryContext(db.Ctx, tsql, sql.Named("Id", id))
 	fmt.Printf("True DB exec Time: %v\n", time.Since(beforeTime))
 	if err != nil {
 		fmt.Println(err)
@@ -209,7 +208,79 @@ func (db *DB) GetArticlesByCategory(category string, limit int) ([]*c.Article, e
 	return articleList[:index], nil
 }
 
+func (db *DB) GetNewestArticles(limit int) ([]*c.Article, error) {
+	err := db.checkDb()
+	c.CheckErr(err)
+	tsql := `DECLARE @Limit INT = @InputLimit;
+	SELECT TOP (@Limit) * FROM IWSchema.Articles ORDER BY UpdatedAt DESC;`
+	beforeTime := time.Now()
+	rows, err := db.InnerDB.QueryContext(db.Ctx, tsql, sql.Named("InputLimit", limit))
+	fmt.Printf("True DB exec Time: %v\n", time.Since(beforeTime))
+	articleList := make([]*c.Article, limit)
+	if err != nil {
+		fmt.Println(err)
+		return articleList, err
+	}
+	defer rows.Close()
+	var count int
+	// beforeTime = time.Now()
+	index := 0
+	for rows.Next() {
+		var a *c.Article = &c.Article{}
+		err := rows.Scan(&a.Id, &a.AuthorId, &a.Category, &a.Title, &a.ImageUrl, &a.Content, &a.CreatedAt, &a.UpdatedAt, &a.Likes, &a.Size)
+		if err != nil {
+			return make([]*c.Article, 0), err
+		}
+		articleList[index] = a
+		index++
+		count++
+	}
+	// fmt.Printf("Scanning time: %v\n", time.Since(beforeTime))
+	// fmt.Printf("Returning %d articles\n", count)
+	return articleList[:index], nil
+}
+
+func (db *DB) EditArticle(a *c.Article) (int64, error) {
+	var err error
+	if db == nil {
+		err = errors.New("EditArticle: db is null")
+		return -1, err
+	}
+	err = db.InnerDB.PingContext(db.Ctx)
+	if err != nil {
+		return -1, err
+	}
+	tsql := `UPDATE IWSchema.Articles (AuthorId, Category, Title, ImageUrl, Content, CreatedAt, UpdatedAt, Likes, Size) VALUES(@AuthorId, @Category, @Title, @ImageUrl, @Content, @CreatedAt, @UpdatedAt, @Likes, @Size) WHERE Id = @Id;
+	      select isNull(SCOPE_IDENTITY(), -1);
+	`
+	stmt, err := db.InnerDB.Prepare(tsql)
+	if err != nil {
+		return -1, err
+	}
+	defer stmt.Close()
+	row := stmt.QueryRowContext(
+		db.Ctx,
+		sql.Named("AuthorId", a.AuthorId),
+		sql.Named("Category", a.Category),
+		sql.Named("Title", a.Title),
+		sql.Named("ImageUrl", a.ImageUrl),
+		sql.Named("Content", a.Content),
+		sql.Named("CreatedAt", a.CreatedAt),
+		sql.Named("UpdatedAt", time.Now()),
+		sql.Named("Likes", 0),
+		sql.Named("Size", int(unsafe.Sizeof(a))),
+		sql.Named("Id", a.Id),
+	)
+	var newID int64
+	err = row.Scan(&newID)
+	if err != nil {
+		return -1, err
+	}
+	return newID, nil
+}
+
 func (db *DB) AddArticle(a *c.Article) (int64, error) {
+	fmt.Println("ABOUT TO ADD ARTICLE YAY")
 	var err error
 	if db == nil {
 		err = errors.New("AddArticle: db is null")
@@ -246,62 +317,3 @@ func (db *DB) AddArticle(a *c.Article) (int64, error) {
 	}
 	return newID, nil
 }
-// func DeleteEmployee(name string) (int64, error) {
-// 	ctx := context.Background()
-
-// 	// Check if database is alive.
-// 	err := db.PingContext(ctx)
-// 	if err != nil {
-// 		return -1, err
-// 	}
-
-// 	tsql := fmt.Sprintf("DELETE FROM TestSchema.Employees WHERE Name = @Name;")
-
-// 	// Execute non-query with named parameters
-// 	result, err := db.ExecContext(ctx, tsql, sql.Named("Name", name))
-// 	if err != nil {
-// 		return -1, err
-// 	}
-
-// 	return result.RowsAffected()
-// }
-
-// ReadEmployees reads all employee records
-// func ReadEmployees() (int, error) {
-// 	ctx := context.Background()
-
-// 	// Check if database is alive.
-// 	err := db.PingContext(ctx)
-// 	if err != nil {
-// 		return -1, err
-// 	}
-
-// 	tsql := fmt.Sprintf("SELECT Id, Name, Location FROM TestSchema.Employees;")
-
-// 	// Execute query
-// 	rows, err := db.QueryContext(ctx, tsql)
-// 	if err != nil {
-// 		return -1, err
-// 	}
-
-// 	defer rows.Close()
-
-// 	var count int
-
-// 	// Iterate through the result set.
-// 	for rows.Next() {
-// 		var name, location string
-// 		var id int
-
-// 		// Get values from row.
-// 		err := rows.Scan(&id, &name, &location)
-// 		if err != nil {
-// 			return -1, err
-// 		}
-
-// 		// fmt.Printf("ID: %d, Name: %s, Location: %s\n", id, name, location)
-// 		count++
-// 	}
-
-// 	return count, nil
-// }
