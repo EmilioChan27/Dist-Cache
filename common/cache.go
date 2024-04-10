@@ -64,7 +64,7 @@ type LRU struct {
 	Capacity    int
 	Size        int
 	ArticleList *list.List
-	IdToArticle map[int]*list.Element
+	IdToArticle *sync.Map
 }
 
 func NewCache(hotCapacity int, coldCapacity int, bufferSize int, timerDuration time.Duration, writeChanLen int, newestId int) *Cache {
@@ -72,7 +72,7 @@ func NewCache(hotCapacity int, coldCapacity int, bufferSize int, timerDuration t
 }
 
 func NewLRU(capacity int) *LRU {
-	return &LRU{Capacity: capacity, Size: 0, ArticleList: list.New(), IdToArticle: make(map[int]*list.Element)}
+	return &LRU{Capacity: capacity, Size: 0, ArticleList: list.New(), IdToArticle: new(sync.Map)}
 }
 
 func (lru *LRU) Move(object *list.Element) {
@@ -100,15 +100,15 @@ func (lru *LRU) Add(a *Article) *list.Element {
 		lru.Remove(outgoingElem.Value.(*Article))
 	}
 	elem := lru.ArticleList.PushFront(a)
-	lru.IdToArticle[a.Id] = elem
+	lru.IdToArticle.Store(a.Id, elem)
 	lru.Size++
 	return outgoingElem
 }
 
 func (lru *LRU) Remove(a *Article) {
-	if elem, found := lru.IdToArticle[a.Id]; found {
-		delete(lru.IdToArticle, a.Id)
-		lru.ArticleList.Remove(elem)
+	if elem, found := lru.IdToArticle.Load(a.Id); found {
+		lru.IdToArticle.Delete(a.Id)
+		lru.ArticleList.Remove(elem.(*list.Element))
 		lru.Size--
 	}
 }
@@ -122,29 +122,29 @@ func (c *Cache) coldToHot(a *Article) {
 
 func (c *Cache) GetArticleById(id int) *Article {
 	hot := c.hot
-	if elem, found := hot.IdToArticle[id]; found {
-		hot.Move(elem)
-		return elem.Value.(*Article)
+	if elem, found := hot.IdToArticle.Load(id); found {
+		hot.Move(elem.(*list.Element))
+		return elem.(*list.Element).Value.(*Article)
 	}
 	cold := c.cold
-	if elem, found := cold.IdToArticle[id]; found {
-		c.coldToHot(elem.Value.(*Article))
-		return elem.Value.(*Article)
+	if elem, found := cold.IdToArticle.Load(id); found {
+		c.coldToHot(elem.(*list.Element).Value.(*Article))
+		return elem.(*list.Element).Value.(*Article)
 	}
 	return nil
 }
 
 func (c *Cache) ModifyArticle(a *Article) bool {
 	hot := c.hot
-	if elem, found := hot.IdToArticle[a.Id]; found {
-		elem.Value = a
-		hot.Move(elem)
+	if elem, found := hot.IdToArticle.Load(a.Id); found {
+		elem.(*list.Element).Value = a
+		hot.Move(elem.(*list.Element))
 		return true
 	}
 	cold := c.cold
-	if elem, found := cold.IdToArticle[a.Id]; found {
-		elem.Value = a
-		c.coldToHot(elem.Value.(*Article))
+	if elem, found := cold.IdToArticle.Load(a.Id); found {
+		elem.(*list.Element).Value = a
+		c.coldToHot(elem.(*list.Element).Value.(*Article))
 		return true
 	}
 	return true
@@ -240,12 +240,12 @@ func (c *Cache) GetArticlesByFieldQuery(field string, query string, limit int, i
 func (c *Cache) Add(a *Article) {
 	c.Lock()
 	defer c.Unlock()
-	if elem, found := c.hot.IdToArticle[a.Id]; found {
-		c.hot.Move(elem)
+	if elem, found := c.hot.IdToArticle.Load(a.Id); found {
+		c.hot.Move(elem.(*list.Element))
 		return
 	}
-	if elem, found := c.cold.IdToArticle[a.Id]; found {
-		c.coldToHot(elem.Value.(*Article))
+	if elem, found := c.cold.IdToArticle.Load(a.Id); found {
+		c.coldToHot(elem.(*list.Element).Value.(*Article))
 		return
 	}
 	if c.hot.Size < c.hot.Capacity {
