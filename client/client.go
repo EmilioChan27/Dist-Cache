@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	actualTest(30, 5*time.Minute)
+	actualTest(60, 5*time.Minute)
 	// getArticleById(2)
 	// latencyTest()
 }
@@ -72,7 +72,7 @@ func latencyTest() {
 	serverUrl := "http://localhost:8080/"
 	fmt.Println("------------------")
 	var res *http.Response
-	a := &c.Article{Id: 50000, AuthorId: 1, Content: "content", Category: "International Affairs", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
+	a := &c.Article{Id: 50000, AuthorId: 1, Content: "contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent", Category: "International Affairs", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
 	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
 	values := map[string]interface{}{"Id": a.Id, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
 	jsonValue, _ := json.Marshal(values)
@@ -147,7 +147,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause2+65s-nocache.txt", numClients, testDuration))
+	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause5+30s-nocache.txt", numClients, testDuration))
 	c.CheckErr(err)
 	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
 	file.WriteString("Hello????")
@@ -158,7 +158,7 @@ outerlabel:
 			break outerlabel
 		case <-clients:
 			go func(zipf *rand.Zipf, maxId int, file *os.File) {
-				waitTime := int(math.Abs(rand.NormFloat64()*2 + 65))
+				waitTime := int(math.Abs(rand.NormFloat64()*5 + 30))
 				id := maxId - int(zipf.Uint64())
 				for i := 0; i < waitTime; i++ {
 					time.Sleep(1 * time.Second)
@@ -240,7 +240,7 @@ outerlabel:
 
 func insertArticle() *http.Response {
 	serverUrl := "http://localhost:8080/"
-	a := &c.Article{Id: 1, AuthorId: 1, Content: "content", Category: "Breaking News", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
+	a := &c.Article{Id: 1, AuthorId: 1, Content: "contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent", Category: "Breaking News", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
 	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
 	values := map[string]interface{}{"Id": 1, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
 	jsonValue, _ := json.Marshal(values)
