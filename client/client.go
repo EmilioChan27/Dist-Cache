@@ -175,7 +175,7 @@ outerlabel:
 				} else {
 					execTimeString = execTimeString[:len(execTimeString)-2] + "\n"
 				}
-				_ = insertArticle()
+				// _ = insertArticle()
 				file.WriteString(execTimeString)
 				clients <- 1
 			}(zipf, maxId, file)
