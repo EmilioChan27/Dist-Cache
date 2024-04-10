@@ -165,7 +165,7 @@ outerlabel:
 				beforeTime := time.Now()
 				_ = getArticleById(id)
 				execTime := time.Since(beforeTime).Milliseconds()
-				execTimeString := fmt.Sprintf("%v", execTime)
+				execTimeString := fmt.Sprintf("%v\n", execTime)
 				// if execTimeString[len(execTimeString)-2:] != "ms" && execTimeString[len(execTimeString)-2:] != "μs" {
 				// 	ms, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
 				// 	c.CheckErr(err)
