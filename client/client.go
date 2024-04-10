@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	actualTest(1, 30*time.Minute)
+	actualTest(750, 15*time.Minute)
 	// getArticleById(2)
 	// latencyTest()
 }
@@ -147,7 +147,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause1+65s-actual-nocache.txt", numClients, testDuration))
+	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause2+65s-nocache.txt", numClients, testDuration))
 	c.CheckErr(err)
 	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
 	file.WriteString("Hello????")
@@ -158,7 +158,7 @@ outerlabel:
 			break outerlabel
 		case <-clients:
 			go func(zipf *rand.Zipf, maxId int, file *os.File) {
-				waitTime := int(math.Abs(rand.NormFloat64()*1 + 65))
+				waitTime := int(math.Abs(rand.NormFloat64()*2 + 65))
 				id := maxId - int(zipf.Uint64())
 				for i := 0; i < waitTime; i++ {
 					time.Sleep(1 * time.Second)

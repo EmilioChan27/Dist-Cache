@@ -69,6 +69,9 @@ func startTimer(cache *c.Cache) {
 					log.Fatal("Something went wrong - the operation isn't create lol")
 				}
 			} else {
+				article, err := db.GetArticleById(cache.NewestId)
+				c.CheckErr(err)
+				cache.Add(article)
 				fmt.Println("received no write")
 			}
 			cache.DbTimer.Reset(timerDuration)
