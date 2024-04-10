@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	actualTest(25, 15*time.Minute)
+	actualTest(45, 15*time.Minute)
 	// getArticleById(2)
 	// latencyTest()
 }
@@ -164,7 +164,7 @@ outerlabel:
 				}
 				beforeTime := time.Now()
 				_ = getArticleById(id)
-				execTime := time.Since(beforeTime).Milliseconds()
+				execTime := time.Since(beforeTime).Microseconds()
 				execTimeString := fmt.Sprintf("%v\n", execTime)
 				// if execTimeString[len(execTimeString)-2:] != "ms" && execTimeString[len(execTimeString)-2:] != "μs" {
 				// 	ms, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
