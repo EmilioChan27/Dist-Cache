@@ -188,7 +188,7 @@ outerlabel:
 			maxId++
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
