@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	actualTest(750, 15*time.Minute)
+	actualTest(25, 15*time.Minute)
 	// getArticleById(2)
 	// latencyTest()
 }
@@ -158,7 +158,7 @@ outerlabel:
 			break outerlabel
 		case <-clients:
 			go func(zipf *rand.Zipf, maxId int, file *os.File) {
-				waitTime := int(math.Abs(rand.NormFloat64()*2 + 65))
+				waitTime := int(math.Abs(rand.NormFloat64()*2 + 2))
 				id := maxId - int(zipf.Uint64())
 				for i := 0; i < waitTime; i++ {
 					time.Sleep(1 * time.Second)
