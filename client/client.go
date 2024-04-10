@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	actualTest(360, 7*time.Minute)
+	actualTest(1, 30*time.Minute)
 	// getArticleById(2)
 	// latencyTest()
 }
@@ -147,7 +147,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause5+30s-cache.txt", numClients, testDuration))
+	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause1+65s-nocache.txt", numClients, testDuration))
 	c.CheckErr(err)
 	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
 	file.WriteString("Hello????")
@@ -167,11 +167,16 @@ outerlabel:
 				_ = getArticleById(id)
 				execTime := time.Since(beforeTime)
 				execTimeString := fmt.Sprintf("%v", execTime)
-				if execTimeString[len(execTimeString)-2:] != "ms" {
+				if execTimeString[len(execTimeString)-2:] != "ms" && execTimeString[len(execTimeString)-2:] != "μs" {
 					ms, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
 					c.CheckErr(err)
 					seconds := ms * 1000
 					execTimeString = fmt.Sprintf("%v\n", seconds)
+				} else if execTimeString[len(execTimeString)-2:] == "μs" {
+					us, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
+					c.CheckErr(err)
+					ms := us / 1000.0
+					execTimeString = fmt.Sprintf("%v\n", ms)
 				} else {
 					execTimeString = execTimeString[:len(execTimeString)-2] + "\n"
 				}
