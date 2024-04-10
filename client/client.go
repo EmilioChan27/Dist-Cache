@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	actualTest(60, 5*time.Minute)
+	actualTest(120, 5*time.Minute)
 	// getArticleById(2)
 	// latencyTest()
 }
@@ -183,7 +183,7 @@ outerlabel:
 			maxId++
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(200 * time.Millisecond)
+				time.Sleep(1 * time.Second)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
