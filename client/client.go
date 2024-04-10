@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	c "github.com/EmilioChan27/Dist-Cache/common"
@@ -165,21 +164,21 @@ outerlabel:
 				}
 				beforeTime := time.Now()
 				_ = getArticleById(id)
-				execTime := time.Since(beforeTime)
+				execTime := time.Since(beforeTime).Milliseconds()
 				execTimeString := fmt.Sprintf("%v", execTime)
-				if execTimeString[len(execTimeString)-2:] != "ms" && execTimeString[len(execTimeString)-2:] != "μs" {
-					ms, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
-					c.CheckErr(err)
-					seconds := ms * 1000
-					execTimeString = fmt.Sprintf("%v\n", seconds)
-				} else if execTimeString[len(execTimeString)-2:] == "μs" {
-					us, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
-					c.CheckErr(err)
-					ms := us / 1000.0
-					execTimeString = fmt.Sprintf("%v\n", ms)
-				} else {
-					execTimeString = execTimeString[:len(execTimeString)-2] + "\n"
-				}
+				// if execTimeString[len(execTimeString)-2:] != "ms" && execTimeString[len(execTimeString)-2:] != "μs" {
+				// 	ms, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
+				// 	c.CheckErr(err)
+				// 	seconds := ms * 1000
+				// 	execTimeString = fmt.Sprintf("%v\n", seconds)
+				// } else if execTimeString[len(execTimeString)-2:] == "μs" {
+				// 	us, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
+				// 	c.CheckErr(err)
+				// 	ms := us / 1000.0
+				// 	execTimeString = fmt.Sprintf("%v\n", ms)
+				// } else {
+				// 	execTimeString = execTimeString[:len(execTimeString)-2] + "\n"
+				// }
 				// _ = insertArticle()
 				file.WriteString(execTimeString)
 				clients <- 1
