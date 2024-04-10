@@ -64,7 +64,7 @@ type LRU struct {
 	Capacity    int
 	Size        int
 	ArticleList *list.List
-	IdToArticle *SyncMap
+	IdToArticle sync.Map
 }
 
 func NewCache(hotCapacity int, coldCapacity int, bufferSize int, timerDuration time.Duration, writeChanLen int, newestId int) *Cache {
@@ -72,7 +72,7 @@ func NewCache(hotCapacity int, coldCapacity int, bufferSize int, timerDuration t
 }
 
 func NewLRU(capacity int) *LRU {
-	return &LRU{Capacity: capacity, Size: 0, ArticleList: list.New(), IdToArticle: NewSyncMap()}
+	return &LRU{Capacity: capacity, Size: 0, ArticleList: list.New(), IdToArticle: sync.Map{}}
 }
 
 func (lru *LRU) Move(object *list.Element) {
