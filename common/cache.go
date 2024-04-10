@@ -52,6 +52,7 @@ type Cache struct {
 	inBuffer  []*Article
 	outBuffer []*Article
 	stats     *Stats
+	NewestId  int // the id of the newest item in the cache
 }
 
 type Write struct {
@@ -66,8 +67,8 @@ type LRU struct {
 	IdToArticle map[int]*list.Element
 }
 
-func NewCache(hotCapacity int, coldCapacity int, bufferSize int, timerDuration time.Duration, writeChanLen int) *Cache {
-	return &Cache{hot: NewLRU(hotCapacity), cold: NewLRU(coldCapacity), inBuffer: make([]*Article, bufferSize), outBuffer: make([]*Article, bufferSize), writes: make(chan *Write, writeChanLen), DbTimer: time.NewTimer(timerDuration), stats: &Stats{}}
+func NewCache(hotCapacity int, coldCapacity int, bufferSize int, timerDuration time.Duration, writeChanLen int, newestId int) *Cache {
+	return &Cache{hot: NewLRU(hotCapacity), cold: NewLRU(coldCapacity), inBuffer: make([]*Article, bufferSize), outBuffer: make([]*Article, bufferSize), writes: make(chan *Write, writeChanLen), DbTimer: time.NewTimer(timerDuration), stats: &Stats{}, NewestId: newestId}
 }
 
 func NewLRU(capacity int) *LRU {
@@ -181,6 +182,19 @@ func (c *Cache) GetArticlesByCategory(category string, limit int, isLimit bool) 
 	}
 	return articleList[:index]
 }
+
+func (c *Cache) SetNewestId(id int) {
+	c.Lock()
+	c.NewestId = id
+	c.Unlock()
+}
+
+// func (c *Cache) GetNewestArticles(limit int) []*Article {
+// 	articleList := make([]*Article, limit)
+// 	l := c.hot.ArticleList
+// 	index := 0
+// 	for
+// }
 
 // we know that since it's a write-through cache, the most recent stuff will definitely be in the cache
 // func (c *Cache) GetBreakingNewsArticles(limit int, isLimit bool) []*Article {

@@ -26,9 +26,9 @@ func main() {
 	hotCapacity = 350
 	timerDuration = 60 * time.Second
 	writeChanLen = 75
-	cache = c.NewCache(coldCapacity, hotCapacity, 1, timerDuration, writeChanLen)
 	// // articles := make([]*c.Article, 10)
-	articles, err := db.GetNewestArticles(750)
+	articles, newestId, err := db.GetNewestArticles(750)
+	cache = c.NewCache(coldCapacity, hotCapacity, 1, timerDuration, writeChanLen, newestId)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func main() {
 	}
 	cache.ToString()
 
-	http.HandleFunc("/front-page", getFrontPageArticles)
+	// http.HandleFunc("/front-page", getFrontPageArticles)
 	http.HandleFunc("/business", getBusinessArticles)
 	http.HandleFunc("/human-interest", getHumanInterestArticles)
 	http.HandleFunc("/international-affairs", getInternationalAffairsArticles)
@@ -60,7 +60,11 @@ func startTimer(cache *c.Cache) {
 			write := cache.GetWrite()
 			if write != nil {
 				if write.Operation == "create" {
-					db.AddArticle(write.Article)
+					id, err := db.AddArticle(write.Article)
+					c.CheckErr(err)
+					if int(id) > cache.NewestId {
+						cache.SetNewestId(int(id))
+					}
 				} else {
 					log.Fatal("Something went wrong - the operation isn't create lol")
 				}
@@ -89,6 +93,8 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&a)
 	fmt.Println(*a)
 	c.CheckErr(err)
+	a.Id = cache.NewestId + 1
+	cache.SetNewestId(cache.NewestId + 1)
 	if r.Method == "PUT" {
 		oldWrite := cache.AddWrite(&c.Write{Operation: "Edit", Article: a})
 		if oldWrite != nil && oldWrite.Operation == "create" {
@@ -99,7 +105,12 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 		cache.Add(a)
 		oldWrite := cache.AddWrite(&c.Write{Operation: "create", Article: a})
 		if oldWrite != nil && oldWrite.Operation == "create" {
-			db.AddArticle(oldWrite.Article)
+			id, err := db.AddArticle(oldWrite.Article)
+			c.CheckErr(err)
+			intId := int(id)
+			if intId > a.Id {
+				cache.SetNewestId(intId)
+			}
 		}
 	} else {
 		log.Fatalf("Actually, the method was %v\n", r.Method)
@@ -209,23 +220,20 @@ func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
 		// fmt.Println("Not updating the cache because the limit is too large")
 	}
 }
-func getFrontPageArticles(w http.ResponseWriter, r *http.Request) {
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	c.CheckErr(err)
-	articles := cache.GetArticlesByCategory("Politics", limit, true)
-	if len(articles) < limit {
-		articles, err = db.GetArticlesByCategory("Politics", limit)
-		c.CheckErr(err)
-		cache.ResetTimer(timerDuration)
 
-	}
-	encodeArticles(w, articles)
-	if limit < coldCapacity {
-		updateCache(articles)
-	} else {
-		// fmt.Println("Not updating the cache because the limit is too large")
-	}
-}
+//	func getFrontPageArticles(w http.ResponseWriter, r *http.Request) {
+//		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+//		c.CheckErr(err)
+//		cache.
+//		articles, _, err := db.GetNewestArticles(limit)
+//		c.CheckErr(err)
+//		encodeArticles(w, articles)
+//		if limit < coldCapacity {
+//			updateCache(articles)
+//		} else {
+//			// fmt.Println("Not updating the cache because the limit is too large")
+//		}
+//	}
 func getBreakingNewsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	c.CheckErr(err)

@@ -153,7 +153,7 @@ func (db *DB) GetArticleById(id int) (*c.Article, error) {
 	tsql := `SELECT * FROM IWSchema.Articles WHERE Id = @Id`
 	beforeTime := time.Now()
 	row, err := db.InnerDB.QueryContext(db.Ctx, tsql, sql.Named("Id", id))
-	fmt.Printf("True DB exec Time: %v\n", time.Since(beforeTime))
+	fmt.Printf("True DB exec Time- ID: %v\n", time.Since(beforeTime))
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -208,7 +208,7 @@ func (db *DB) GetArticlesByCategory(category string, limit int) ([]*c.Article, e
 	return articleList[:index], nil
 }
 
-func (db *DB) GetNewestArticles(limit int) ([]*c.Article, error) {
+func (db *DB) GetNewestArticles(limit int) ([]*c.Article, int, error) {
 	err := db.checkDb()
 	c.CheckErr(err)
 	tsql := `DECLARE @Limit INT = @InputLimit;
@@ -219,7 +219,7 @@ func (db *DB) GetNewestArticles(limit int) ([]*c.Article, error) {
 	articleList := make([]*c.Article, limit)
 	if err != nil {
 		fmt.Println(err)
-		return articleList, err
+		return articleList, -1, err
 	}
 	defer rows.Close()
 	var count int
@@ -229,7 +229,7 @@ func (db *DB) GetNewestArticles(limit int) ([]*c.Article, error) {
 		var a *c.Article = &c.Article{}
 		err := rows.Scan(&a.Id, &a.AuthorId, &a.Category, &a.Title, &a.ImageUrl, &a.Content, &a.CreatedAt, &a.UpdatedAt, &a.Likes, &a.Size)
 		if err != nil {
-			return make([]*c.Article, 0), err
+			return make([]*c.Article, 0), -1, err
 		}
 		articleList[index] = a
 		index++
@@ -237,7 +237,7 @@ func (db *DB) GetNewestArticles(limit int) ([]*c.Article, error) {
 	}
 	// fmt.Printf("Scanning time: %v\n", time.Since(beforeTime))
 	// fmt.Printf("Returning %d articles\n", count)
-	return articleList[:index], nil
+	return articleList[:index], articleList[index-1].Id, nil
 }
 
 func (db *DB) EditArticle(a *c.Article) (int64, error) {
@@ -280,7 +280,7 @@ func (db *DB) EditArticle(a *c.Article) (int64, error) {
 }
 
 func (db *DB) AddArticle(a *c.Article) (int64, error) {
-	fmt.Println("ABOUT TO ADD ARTICLE YAY")
+	// fmt.Println("ABOUT TO ADD ARTICLE YAY")
 	var err error
 	if db == nil {
 		err = errors.New("AddArticle: db is null")
@@ -293,7 +293,9 @@ func (db *DB) AddArticle(a *c.Article) (int64, error) {
 	tsql := `INSERT INTO IWSchema.Articles (AuthorId, Category, Title, ImageUrl, Content, CreatedAt, UpdatedAt, Likes, Size) VALUES(@AuthorId, @Category, @Title, @ImageUrl, @Content, @CreatedAt, @UpdatedAt, @Likes, @Size);
 	      select isNull(SCOPE_IDENTITY(), -1);
 	`
+	beforeTime := time.Now()
 	stmt, err := db.InnerDB.Prepare(tsql)
+	fmt.Printf("True DB exec time - Add: %v\n", time.Since(beforeTime))
 	if err != nil {
 		return -1, err
 	}
