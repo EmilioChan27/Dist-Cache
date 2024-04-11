@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	actualTest(2500, 3*time.Minute)
+	actualTest(2000, 3*time.Minute)
 	// insertArticle()
 	// getArticleById(2)
 	// latencyTest()
