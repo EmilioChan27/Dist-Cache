@@ -143,7 +143,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 100)
 	overallTimer := time.NewTimer(testDuration)
-	maxId := 52250
+	maxId := 52246
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
