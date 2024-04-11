@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	actualTest(75, 10*time.Minute)
+	actualTest(100, 8*time.Minute)
 	// insertArticle()
 	// getArticleById(2)
 	// latencyTest()
@@ -143,13 +143,13 @@ func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 100)
 	overallTimer := time.NewTimer(testDuration)
-	maxId := 52254
+	maxId := 52257
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
 	waitTimeMean := 65
 	waitTimeStdDev := 5
-	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-cache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
+	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
 	c.CheckErr(err)
 	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
 outerlabel:
