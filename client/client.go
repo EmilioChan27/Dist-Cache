@@ -146,7 +146,9 @@ func actualTest(numClients int, testDuration time.Duration) {
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause2+65s-cache.txt", numClients, testDuration))
+	waitTimeMean := 2
+	waitTimeStdDev := 2
+	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
 	c.CheckErr(err)
 	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
 	file.WriteString("Hello????")
@@ -156,8 +158,8 @@ outerlabel:
 		case <-overallTimer.C:
 			break outerlabel
 		case <-clients:
-			go func(zipf *rand.Zipf, maxId int, file *os.File) {
-				waitTime := int(math.Abs(rand.NormFloat64()*2 + 2))
+			go func(zipf *rand.Zipf, maxId int, file *os.File, mean int, stddev int) {
+				waitTime := int(math.Abs(rand.NormFloat64()*float64(stddev) + float64(mean)))
 				id := maxId - int(zipf.Uint64())
 				for i := 0; i < waitTime; i++ {
 					time.Sleep(1 * time.Second)
@@ -182,7 +184,7 @@ outerlabel:
 				// _ = insertArticle()
 				file.WriteString(execTimeString)
 				clients <- 1
-			}(zipf, maxId, file)
+			}(zipf, maxId, file, waitTimeMean, waitTimeStdDev)
 		case <-writes:
 			maxId++
 		default:
