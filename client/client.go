@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	actualTest(1000, 8*time.Minute)
+	actualTest(1000, 10*time.Minute)
 }
 func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
@@ -61,7 +61,7 @@ outerlabel:
 			}
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(300 * time.Millisecond)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
