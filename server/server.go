@@ -106,11 +106,11 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 	// 	log.Fatalf("Actually, the method was %v\n", r.Method)
 	// }
 	newId, err := db.AddArticle(a)
-	a.Id = int(newId)
+	// a.Id = int(newId)
 	c.CheckErr(err)
 	enc := json.NewEncoder(w)
 
-	enc.Encode(a)
+	enc.Encode(newId)
 	// w.WriteHeader(201)
 }
 

@@ -118,6 +118,8 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Fatalf("Actually, the method was %v\n", r.Method)
 	}
+	enc := json.NewEncoder(w)
+	enc.Encode(cache.NewestId)
 	// w.WriteHeader(201)
 }
 

@@ -237,7 +237,7 @@ func (db *DB) GetNewestArticles(limit int) ([]*c.Article, int, error) {
 	}
 	// fmt.Printf("Scanning time: %v\n", time.Since(beforeTime))
 	// fmt.Printf("Returning %d articles\n", count)
-	return articleList[:index], articleList[index-1].Id, nil
+	return articleList[:index], articleList[0].Id, nil
 }
 
 func (db *DB) EditArticle(a *c.Article) (int64, error) {

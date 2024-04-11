@@ -255,7 +255,7 @@ func (c *Cache) Add(a *Article) {
 }
 
 func (c *Cache) AddWrite(w *Write) *Write {
-	fmt.Println("about to add a write inside of caceh")
+	// fmt.Println("about to add a write inside of caceh")
 	var write *Write
 	if len(c.writes) == cap(c.writes) {
 		write = <-c.writes
