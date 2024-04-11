@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	actualTest(1000, 5*time.Minute)
+	actualTest(25000, 5*time.Minute)
 	// insertArticle()
 	// getArticleById(2)
 	// latencyTest()
@@ -143,7 +143,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 100)
 	overallTimer := time.NewTimer(testDuration)
-	maxId := 52262
+	maxId := 52291
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
@@ -196,7 +196,7 @@ outerlabel:
 			}
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
