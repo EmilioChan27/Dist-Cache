@@ -15,13 +15,13 @@ import (
 )
 
 func main() {
-	actualTest(500, 8*time.Minute)
+	actualTest(1000, 8*time.Minute)
 }
 func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 1000)
 	overallTimer := time.NewTimer(testDuration)
-	maxId := 53096
+	maxId := 53117
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
