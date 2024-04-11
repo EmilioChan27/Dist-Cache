@@ -196,7 +196,7 @@ outerlabel:
 			}
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(300 * time.Millisecond)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
