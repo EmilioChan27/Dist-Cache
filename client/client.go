@@ -16,6 +16,7 @@ import (
 
 func main() {
 	actualTest(45, 10*time.Minute)
+	// insertArticle()
 	// getArticleById(2)
 	// latencyTest()
 }
@@ -142,7 +143,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 100)
 	overallTimer := time.NewTimer(testDuration)
-	maxId := 51845
+	maxId := 52250
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
@@ -261,10 +262,10 @@ func insertArticle() int {
 		log.Fatal(err)
 	}
 	dec := json.NewDecoder(res.Body)
-	var article *c.Article
-	dec.Decode(&article)
+	var newestId int
+	dec.Decode(&newestId)
 	// fmt.Printf("res: %v\n", res)
-	return article.Id
+	return newestId
 }
 
 func getSectionArticles() *http.Response {
