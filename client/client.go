@@ -15,26 +15,61 @@ import (
 )
 
 func main() {
-	actualTest(1500, 3*time.Minute)
-	// insertArticle()
-	// getArticleById(2)
-	// latencyTest()
+	actualTest(200, 8*time.Minute)
 }
+func actualTest(numClients int, testDuration time.Duration) {
+	clients := make(chan int, numClients)
+	writes := make(chan int, 1000)
+	overallTimer := time.NewTimer(testDuration)
+	maxId := 53073
+	src := rand.NewSource(int64(maxId))
+	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
+	actualNumClients := 0
+	waitTimeMean := 65
+	waitTimeStdDev := 5
+	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
+	c.CheckErr(err)
+	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
+outerlabel:
+	for {
+		select {
+		case <-overallTimer.C:
+			break outerlabel
+		case <-clients:
+			go func(zipf *rand.Zipf, maxId int, file *os.File, mean int, stddev int) {
+				waitTime := int(math.Abs(rand.NormFloat64()*float64(stddev) + float64(mean)))
+				id := maxId - int(zipf.Uint64())
+				for i := 0; i < waitTime; i++ {
+					time.Sleep(1 * time.Second)
+				}
+				writeOrGet := rand.Intn(150)
+				beforeTime := time.Now()
+				if writeOrGet == 0 {
+					newMaxId := insertArticle()
+					writes <- newMaxId
+				} else {
+					getArticleById(id)
+				}
+				execTime := time.Since(beforeTime).Microseconds()
+				execTimeString := fmt.Sprintf("%v\n", execTime)
+				file.WriteString(execTimeString)
+				clients <- 1
+			}(zipf, maxId, file, waitTimeMean, waitTimeStdDev)
+		case newMaxId := <-writes:
+			if newMaxId > maxId {
+				maxId = newMaxId
+			}
+		default:
+			if actualNumClients < numClients {
+				time.Sleep(500 * time.Millisecond)
+				clients <- 1
+				actualNumClients++
+				fmt.Printf("Current numClients: %d\n", actualNumClients)
+			}
+		}
+	}
 
-// func editArticleById(a *c.Article) {
-// 	serverUrl := "http://localhost:8080/"
-// 	fmt.Println("------------------")
-// 	var res *http.Response
-// 	a = &c.Article{Id: a.Id, AuthorId: a.AuthorId, Content: "new-content", Category: a.Category, Title: a.Title, ImageUrl: a.ImageUrl, Likes: a.Likes, Size: a.Size}
-// 	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
-// 	values := map[string]interface{}{"Id": a.Id, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
-// 	jsonValue, _ := json.Marshal(values)
-// 	res, err := http.(serverUrl+"write", "applicatio/json", bytes.NewBuffer(jsonValue))
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	fmt.Printf("res: %v\n", res)
-// }
+}
 
 func getArticleById(id int) *http.Response {
 	serverUrl := "http://LX-Server:8080/"
@@ -48,24 +83,23 @@ func getArticleById(id int) *http.Response {
 		log.Fatal(err)
 	}
 	return res
-	// dec := json.NewDecoder(res.Body)
+}
 
-	// defer res.Body.Close()
-	// // articles := make([]*c.Article, 0)
-	// numArticles := 0
-	// for dec.More() {
-	// 	var a *c.Article
-	// 	err = dec.Decode(&a)
-	// 	fmt.Println(a)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	numArticles++
-	// 	// fmt.Printf("Id: %d\n", a.Id)
-	// 	// articles = append(articles, a)
-	// }
-	// fmt.Printf("Num articles: %d\n", numArticles)
-
+func insertArticle() int {
+	serverUrl := "http://LX-Server:8080/"
+	a := &c.Article{Id: 1, AuthorId: 1, Content: "contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent", Category: "Breaking News", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
+	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
+	values := map[string]interface{}{"Id": 1, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
+	jsonValue, _ := json.Marshal(values)
+	res, err := http.Post(serverUrl+"write", "application/json", bytes.NewBuffer(jsonValue))
+	if err != nil {
+		log.Fatal(err)
+	}
+	dec := json.NewDecoder(res.Body)
+	var newestId int
+	dec.Decode(&newestId)
+	// fmt.Printf("res: %v\n", res)
+	return newestId
 }
 
 func latencyTest() {
@@ -139,73 +173,6 @@ func latencyTest() {
 	// }
 }
 
-func actualTest(numClients int, testDuration time.Duration) {
-	clients := make(chan int, numClients)
-	writes := make(chan int, 1000)
-	overallTimer := time.NewTimer(testDuration)
-	maxId := 52669
-	src := rand.NewSource(int64(maxId))
-	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
-	actualNumClients := 0
-	waitTimeMean := 30
-	waitTimeStdDev := 5
-	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
-	c.CheckErr(err)
-	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
-outerlabel:
-	for {
-		select {
-		case <-overallTimer.C:
-			break outerlabel
-		case <-clients:
-			go func(zipf *rand.Zipf, maxId int, file *os.File, mean int, stddev int) {
-				waitTime := int(math.Abs(rand.NormFloat64()*float64(stddev) + float64(mean)))
-				id := maxId - int(zipf.Uint64())
-				for i := 0; i < waitTime; i++ {
-					time.Sleep(1 * time.Second)
-				}
-				writeOrGet := rand.Intn(150)
-				beforeTime := time.Now()
-				if writeOrGet == 0 {
-					newMaxId := insertArticle()
-					writes <- newMaxId
-				} else {
-					getArticleById(id)
-				}
-				execTime := time.Since(beforeTime).Microseconds()
-				execTimeString := fmt.Sprintf("%v\n", execTime)
-				// if execTimeString[len(execTimeString)-2:] != "ms" && execTimeString[len(execTimeString)-2:] != "μs" {
-				// 	ms, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
-				// 	c.CheckErr(err)
-				// 	seconds := ms * 1000
-				// 	execTimeString = fmt.Sprintf("%v\n", seconds)
-				// } else if execTimeString[len(execTimeString)-2:] == "μs" {
-				// 	us, err := strconv.ParseFloat(execTimeString[:len(execTimeString)-2], 32)
-				// 	c.CheckErr(err)
-				// 	ms := us / 1000.0
-				// 	execTimeString = fmt.Sprintf("%v\n", ms)
-				// } else {
-				// 	execTimeString = execTimeString[:len(execTimeString)-2] + "\n"
-				// }
-				file.WriteString(execTimeString)
-				clients <- 1
-			}(zipf, maxId, file, waitTimeMean, waitTimeStdDev)
-		case newMaxId := <-writes:
-			if newMaxId > maxId {
-				maxId = newMaxId
-			}
-		default:
-			if actualNumClients < numClients {
-				time.Sleep(50 * time.Millisecond)
-				clients <- 1
-				actualNumClients++
-				fmt.Printf("Current numClients: %d\n", actualNumClients)
-			}
-		}
-	}
-
-}
-
 // func zipfTest() {
 // 	writeChan := make(chan int, 1000)
 // 	longQueryChan := make(chan int, 1000)
@@ -251,23 +218,6 @@ outerlabel:
 // 	file.WriteString(fmt.Sprintf("Num long queries: %d\n", len(longQueryChan)))
 // }
 
-func insertArticle() int {
-	serverUrl := "http://LX-Server:8080/"
-	a := &c.Article{Id: 1, AuthorId: 1, Content: "contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent", Category: "Breaking News", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
-	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
-	values := map[string]interface{}{"Id": 1, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
-	jsonValue, _ := json.Marshal(values)
-	res, err := http.Post(serverUrl+"write", "application/json", bytes.NewBuffer(jsonValue))
-	if err != nil {
-		log.Fatal(err)
-	}
-	dec := json.NewDecoder(res.Body)
-	var newestId int
-	dec.Decode(&newestId)
-	// fmt.Printf("res: %v\n", res)
-	return newestId
-}
-
 func getSectionArticles() *http.Response {
 	serverUrl := "http://localhost:8080/"
 	var res *http.Response
@@ -301,3 +251,18 @@ func getSectionArticles() *http.Response {
 	c.CheckErr(err)
 	return res
 }
+
+// func editArticleById(a *c.Article) {
+// 	serverUrl := "http://localhost:8080/"
+// 	fmt.Println("------------------")
+// 	var res *http.Response
+// 	a = &c.Article{Id: a.Id, AuthorId: a.AuthorId, Content: "new-content", Category: a.Category, Title: a.Title, ImageUrl: a.ImageUrl, Likes: a.Likes, Size: a.Size}
+// 	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
+// 	values := map[string]interface{}{"Id": a.Id, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
+// 	jsonValue, _ := json.Marshal(values)
+// 	res, err := http.(serverUrl+"write", "applicatio/json", bytes.NewBuffer(jsonValue))
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Printf("res: %v\n", res)
+// }
