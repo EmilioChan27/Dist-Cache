@@ -28,7 +28,7 @@ func main() {
 	writeChanLen = 75
 	// // articles := make([]*c.Article, 10)
 	articles, newestId, err := db.GetNewestArticles(750)
-	cache = c.NewCache(coldCapacity, hotCapacity, 1, timerDuration, writeChanLen, newestId)
+	cache = c.NewCache(coldCapacity, hotCapacity, timerDuration, writeChanLen, newestId)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	var a *c.Article
 	err := dec.Decode(&a)
-	fmt.Println(*a)
+	// fmt.Println(*a)
 	c.CheckErr(err)
 	a.Id = cache.NewestId + 1
 	cache.SetNewestId(cache.NewestId + 1)
@@ -104,7 +104,7 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 			db.AddArticle(oldWrite.Article)
 		}
 	} else if r.Method == "POST" {
-		fmt.Println("am about to create a write")
+		// fmt.Println("am about to create a write")
 		cache.Add(a)
 		oldWrite := cache.AddWrite(&c.Write{Operation: "create", Article: a})
 		if oldWrite != nil && oldWrite.Operation == "create" {

@@ -45,14 +45,12 @@ type Stats struct {
 }
 type Cache struct {
 	sync.RWMutex
-	hot       *LRU
-	cold      *LRU
-	DbTimer   *time.Timer
-	writes    chan (*Write)
-	inBuffer  []*Article
-	outBuffer []*Article
-	stats     *Stats
-	NewestId  int // the id of the newest item in the cache
+	hot     *LRU
+	cold    *LRU
+	DbTimer *time.Timer
+	writes  chan (*Write)
+	stats    *Stats
+	NewestId int // the id of the newest item in the cache
 }
 
 type Write struct {
@@ -67,8 +65,8 @@ type LRU struct {
 	IdToArticle sync.Map
 }
 
-func NewCache(hotCapacity int, coldCapacity int, bufferSize int, timerDuration time.Duration, writeChanLen int, newestId int) *Cache {
-	return &Cache{hot: NewLRU(hotCapacity), cold: NewLRU(coldCapacity), inBuffer: make([]*Article, bufferSize), outBuffer: make([]*Article, bufferSize), writes: make(chan *Write, writeChanLen), DbTimer: time.NewTimer(timerDuration), stats: &Stats{}, NewestId: newestId}
+func NewCache(hotCapacity int, coldCapacity int, timerDuration time.Duration, writeChanLen int, newestId int) *Cache {
+	return &Cache{hot: NewLRU(hotCapacity), cold: NewLRU(coldCapacity), writes: make(chan *Write, writeChanLen), DbTimer: time.NewTimer(timerDuration), stats: &Stats{}, NewestId: newestId}
 }
 
 func NewLRU(capacity int) *LRU {
@@ -251,10 +249,8 @@ func (c *Cache) Add(a *Article) {
 	if c.hot.Size < c.hot.Capacity {
 		c.hot.Add(a)
 	} else {
-		oldColdElem := c.cold.Add(a)
-		if oldColdElem != nil {
-			c.outBuffer = append(c.outBuffer, oldColdElem.Value.(*Article))
-		}
+		_ = c.cold.Add(a)
+
 	}
 }
 

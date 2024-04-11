@@ -146,12 +146,11 @@ func actualTest(numClients int, testDuration time.Duration) {
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	waitTimeMean := 2
-	waitTimeStdDev := 2
-	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
+	waitTimeMean := 65
+	waitTimeStdDev := 5
+	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
 	c.CheckErr(err)
 	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
-	file.WriteString("Hello????")
 outerlabel:
 	for {
 		select {
@@ -164,8 +163,14 @@ outerlabel:
 				for i := 0; i < waitTime; i++ {
 					time.Sleep(1 * time.Second)
 				}
+				writeOrGet := rand.Intn(150)
 				beforeTime := time.Now()
-				_ = getArticleById(id)
+				if writeOrGet == 0 {
+					newMaxId := insertArticle()
+					writes <- newMaxId
+				} else {
+					getArticleById(id)
+				}
 				execTime := time.Since(beforeTime).Microseconds()
 				execTimeString := fmt.Sprintf("%v\n", execTime)
 				// if execTimeString[len(execTimeString)-2:] != "ms" && execTimeString[len(execTimeString)-2:] != "μs" {
@@ -181,12 +186,15 @@ outerlabel:
 				// } else {
 				// 	execTimeString = execTimeString[:len(execTimeString)-2] + "\n"
 				// }
-				// _ = insertArticle()
+
+				id = insertArticle()
 				file.WriteString(execTimeString)
 				clients <- 1
 			}(zipf, maxId, file, waitTimeMean, waitTimeStdDev)
-		case <-writes:
-			maxId++
+		case newMaxId := <-writes:
+			if newMaxId > maxId {
+				maxId = newMaxId
+			}
 		default:
 			if actualNumClients < numClients {
 				time.Sleep(10 * time.Millisecond)
@@ -244,8 +252,8 @@ outerlabel:
 // 	file.WriteString(fmt.Sprintf("Num long queries: %d\n", len(longQueryChan)))
 // }
 
-func insertArticle() *http.Response {
-	serverUrl := "http://localhost:8080/"
+func insertArticle() int {
+	serverUrl := "http://LX-Server:8080/"
 	a := &c.Article{Id: 1, AuthorId: 1, Content: "contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent", Category: "Breaking News", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
 	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
 	values := map[string]interface{}{"Id": 1, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
@@ -254,8 +262,11 @@ func insertArticle() *http.Response {
 	if err != nil {
 		log.Fatal(err)
 	}
+	dec := json.NewDecoder(res.Body)
+	var article *c.Article
+	dec.Decode(&article)
 	// fmt.Printf("res: %v\n", res)
-	return res
+	return article.Id
 }
 
 func getSectionArticles() *http.Response {
