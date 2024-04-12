@@ -15,8 +15,8 @@ import (
 )
 
 func main() {
-	for i := 0; i < 3; i++ {
-		actualTest(100, 5*time.Minute, i)
+	for i := 0; i < 1; i++ {
+		actualTest(1, 450*time.Minute, i)
 	}
 }
 func actualTest(numClients int, testDuration time.Duration, run int) {
@@ -27,7 +27,7 @@ func actualTest(numClients int, testDuration time.Duration, run int) {
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	waitTimeMean := 65
+	waitTimeMean := 300
 	waitTimeStdDev := 15
 
 	execTimeStringChan := make(chan string, 1000)
