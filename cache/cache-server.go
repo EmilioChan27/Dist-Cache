@@ -41,8 +41,8 @@ func main() {
 	cacheUpdateFile.Close()
 
 	// // articles := make([]*c.Article, 10)
-	articles, newestId, err := db.GetNewestArticles(750)
-	cache = c.NewCache(coldCapacity, hotCapacity, timerDuration, writeChanLen, newestId)
+	articles, newestId, err := db.GetNewestArticles(700)
+	cache = c.NewCache(hotCapacity, coldCapacity, timerDuration, writeChanLen, newestId)
 	if err != nil {
 		log.Fatal(err)
 	}

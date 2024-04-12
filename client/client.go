@@ -15,24 +15,24 @@ import (
 )
 
 func main() {
-	for i := 0; i < 1; i++ {
-		actualTest(1, 450*time.Minute, i)
+	for i := 0; i < 3; i++ {
+		actualTest(100, 5*time.Minute, i)
 	}
 }
 func actualTest(numClients int, testDuration time.Duration, run int) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 1000)
 	overallTimer := time.NewTimer(testDuration)
-	maxId := 53738
+	maxId := 53788
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	waitTimeMean := 300
+	waitTimeMean := 65
 	waitTimeStdDev := 15
 
 	execTimeStringChan := make(chan string, 1000)
 	go func(run int) {
-		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites-%d.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean, run))
+		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-cache-1pctWrites-%d.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean, run))
 		c.CheckErr(err)
 		file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 		for {
@@ -74,7 +74,7 @@ func actualTest(numClients int, testDuration time.Duration, run int) {
 			}
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(20 * time.Millisecond)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
@@ -85,7 +85,8 @@ func actualTest(numClients int, testDuration time.Duration, run int) {
 }
 
 func getArticleById(id int) *http.Response {
-	serverUrl := "http://LX-Server:8080/"
+	// serverUrl := "http://LX-Server:8080/"
+	serverUrl := "http://localhost:8080/"
 	// fmt.Println("------------------")
 	var res *http.Response
 	urlEnd := fmt.Sprintf("article?id=%d", id)
@@ -99,7 +100,9 @@ func getArticleById(id int) *http.Response {
 }
 
 func insertArticle() int {
-	serverUrl := "http://LX-Server:8080/"
+	// serverUrl := "http://LX-Server:8080/"
+	serverUrl := "http://localhost:8080/"
+
 	a := &c.Article{Id: 1, AuthorId: 1, Content: "contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent", Category: "Breaking News", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
 	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
 	values := map[string]interface{}{"Id": 1, "AuthorId": a.AuthorId, "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": a.Likes, "Size": a.Size}
