@@ -70,7 +70,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 			}
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(5 * time.Millisecond)
+				time.Sleep(2 * time.Second)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
