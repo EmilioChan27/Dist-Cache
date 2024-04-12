@@ -15,8 +15,8 @@ import (
 )
 
 func main() {
-	for i := 0; i < 1; i++ {
-		actualTest(750, 3*time.Minute, i)
+	for i := 0; i < 3; i++ {
+		actualTest(50, 3*time.Minute, i)
 	}
 }
 func actualTest(numClients int, testDuration time.Duration, run int) {
