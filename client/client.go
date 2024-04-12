@@ -8,14 +8,13 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
-	"os"
 	"time"
 
 	c "github.com/EmilioChan27/Dist-Cache/common"
 )
 
 func main() {
-	actualTest(25000, 8*time.Minute)
+	actualTest(25000, 1*time.Second)
 }
 func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
@@ -29,11 +28,23 @@ func actualTest(numClients int, testDuration time.Duration) {
 	waitTimeStdDev := 15
 
 	execTimeStringChan := make(chan string, 1000)
-outerlabel:
+	go func() {
+		i := 0
+	// 	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
+	// 	c.CheckErr(err)
+	// 	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
+		for {
+			select {
+			case <-execTimeStringChan:
+				i ++
+				// file.WriteString(str)
+			}
+		}
+	}()
 	for {
 		select {
 		case <-overallTimer.C:
-			break outerlabel
+			return
 		case <-clients:
 			go func(zipf *rand.Zipf, maxId int, mean int, stddev int) {
 				waitTime := int(math.Abs(rand.NormFloat64()*float64(stddev) + float64(mean)))
@@ -68,17 +79,6 @@ outerlabel:
 		}
 	}
 
-	go func() {
-		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
-		c.CheckErr(err)
-		file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
-		for {
-			select {
-			case str := <-execTimeStringChan:
-				file.WriteString(str)
-			}
-		}
-	}()
 }
 
 func getArticleById(id int) *http.Response {
