@@ -105,6 +105,7 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if r.Method == "POST" {
 		// fmt.Println("am about to create a write")
+		
 		cache.Add(a)
 		oldWrite := cache.AddWrite(&c.Write{Operation: "create", Article: a})
 		if oldWrite != nil && oldWrite.Operation == "create" {

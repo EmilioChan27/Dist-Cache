@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	actualTest(100, 6*time.Minute)
+	actualTest(150, 5*time.Minute)
 }
 func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
