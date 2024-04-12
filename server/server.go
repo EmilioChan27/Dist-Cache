@@ -16,11 +16,14 @@ import (
 
 // var numRequests int = 0
 var db *d.DB
-var file *os.File
+
+// var file *os.File
 
 func main() {
 	db = d.NewDB()
-	file, err := os.Create("dbAccessTime.txt")
+	file, err := os.OpenFile("dbAccessTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	c.CheckErr(err)
+	defer file.Close()
 	c.CheckErr(err)
 	file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 	// coldCapacity = 350
@@ -56,6 +59,7 @@ func main() {
 
 func recordDBExecTime(beforeTime time.Time) {
 	file, err := os.OpenFile("dbAccessTime.txt", os.O_APPEND, os.ModeAppend)
+	defer file.Close()
 	c.CheckErr(err)
 	file.WriteString(fmt.Sprintf("%v\n", time.Since(beforeTime).Microseconds()))
 }
