@@ -26,7 +26,7 @@ func main() {
 		fmt.Println("HELLO")
 	}
 	c.CheckErr(err)
-	defer file.Close()
+	// defer file.Close()
 	c.CheckErr(err)
 	file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 	// coldCapacity = 350
