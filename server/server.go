@@ -29,6 +29,7 @@ func main() {
 	// defer file.Close()
 	// c.CheckErr(err)
 	file.WriteString(fmt.Sprintf("%v\n", time.Now()))
+	file.Close()
 	// coldCapacity = 350
 	// hotCapacity = 350
 	// timerDuration = 60 * time.Second
@@ -66,7 +67,8 @@ func recordDBExecTime(beforeTime time.Time) {
 	// defer file.Close()
 	c.CheckErr(err)
 	file.WriteString(fmt.Sprintf("%v\n", time.Since(beforeTime).Microseconds()))
-	fmt.Println("just wrote to file")
+	file.Close()
+	// fmt.Println("just wrote to file")
 }
 
 // func startTimer(cache *c.Cache) {
