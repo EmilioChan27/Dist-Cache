@@ -8,13 +8,14 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
 	c "github.com/EmilioChan27/Dist-Cache/common"
 )
 
 func main() {
-	actualTest(25000, 1*time.Second)
+	actualTest(25000, 9*time.Minute)
 }
 func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
@@ -29,15 +30,13 @@ func actualTest(numClients int, testDuration time.Duration) {
 
 	execTimeStringChan := make(chan string, 1000)
 	go func() {
-		i := 0
-	// 	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
-	// 	c.CheckErr(err)
-	// 	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
+		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
+		c.CheckErr(err)
+		file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
 		for {
 			select {
-			case <-execTimeStringChan:
-				i ++
-				// file.WriteString(str)
+			case str := <-execTimeStringChan:
+				file.WriteString(str)
 			}
 		}
 	}()
