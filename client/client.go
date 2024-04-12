@@ -86,7 +86,7 @@ func actualTest(numClients int, testDuration time.Duration, run int) {
 
 func getArticleById(id int) *http.Response {
 	// serverUrl := "http://LX-Server:8080/"
-	serverUrl := "http://LX-Server8080/"
+	serverUrl := "http://LX-Server:8080/"
 	// fmt.Println("------------------")
 	var res *http.Response
 	urlEnd := fmt.Sprintf("article?id=%d", id)
@@ -101,7 +101,7 @@ func getArticleById(id int) *http.Response {
 
 func insertArticle() int {
 	// serverUrl := "http://LX-Server:8080/"
-	serverUrl := "http://LX-Server8080/"
+	serverUrl := "http://LX-Server:8080/"
 
 	a := &c.Article{Id: 1, AuthorId: 1, Content: "contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent", Category: "Breaking News", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
 	// values := map[string]interface{}{"Id": fmt.Sprintf("%d", a.Id), "AuthorId": fmt.Sprintf("%d", a.AuthorId), "Content": a.Content, "Category": a.Category, "Title": a.Title, "ImageUrl": a.ImageUrl, "Likes": fmt.Sprintf("%d", a.Likes), "Size": fmt.Sprintf("%d", a.Size)}
@@ -119,7 +119,7 @@ func insertArticle() int {
 }
 
 func latencyTest() {
-	serverUrl := "http://LX-Server8080/"
+	serverUrl := "http://LX-Server:8080/"
 	fmt.Println("------------------")
 	var res *http.Response
 	a := &c.Article{Id: 50000, AuthorId: 1, Content: "contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent", Category: "International Affairs", Title: "Testing article", ImageUrl: "Random Image", Likes: 0, Size: 25}
@@ -235,7 +235,7 @@ func latencyTest() {
 // }
 
 func getSectionArticles() *http.Response {
-	serverUrl := "http://LX-Server8080/"
+	serverUrl := "http://LX-Server:8080/"
 	var res *http.Response
 	var err error
 	i := rand.Intn(10)
