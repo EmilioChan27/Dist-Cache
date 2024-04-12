@@ -58,6 +58,7 @@ func main() {
 	// startTimer(cache)
 	fmt.Println("Server is running on port 8080...")
 	http.ListenAndServe(":8080", nil)
+	fmt.Println("Shouldn't get here")
 }
 
 func recordDBExecTime(beforeTime time.Time) {
