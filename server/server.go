@@ -55,6 +55,8 @@ func main() {
 }
 
 func recordDBExecTime(beforeTime time.Time) {
+	file, err := os.OpenFile("dbAccessTime.txt", os.O_APPEND, os.ModeAppend)
+	c.CheckErr(err)
 	file.WriteString(fmt.Sprintf("%v\n", time.Since(beforeTime).Microseconds()))
 }
 
