@@ -97,28 +97,29 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println(*a)
 	c.CheckErr(err)
 	a.Id = cache.NewestId + 1
-	cache.SetNewestId(cache.NewestId + 1)
-	if r.Method == "PUT" {
-		oldWrite := cache.AddWrite(&c.Write{Operation: "Edit", Article: a})
-		if oldWrite != nil && oldWrite.Operation == "create" {
-			db.AddArticle(oldWrite.Article)
-		}
-	} else if r.Method == "POST" {
-		// fmt.Println("am about to create a write")
-		
-		cache.Add(a)
-		oldWrite := cache.AddWrite(&c.Write{Operation: "create", Article: a})
-		if oldWrite != nil && oldWrite.Operation == "create" {
-			id, err := db.AddArticle(oldWrite.Article)
-			c.CheckErr(err)
-			intId := int(id)
-			if intId > a.Id {
-				cache.SetNewestId(intId)
+	go func(cache *c.Cache, db *d.DB) {
+		cache.SetNewestId(cache.NewestId + 1)
+		if r.Method == "PUT" {
+			oldWrite := cache.AddWrite(&c.Write{Operation: "Edit", Article: a})
+			if oldWrite != nil && oldWrite.Operation == "create" {
+				db.AddArticle(oldWrite.Article)
 			}
+		} else if r.Method == "POST" {
+			// fmt.Println("am about to create a write")
+			cache.Add(a)
+			oldWrite := cache.AddWrite(&c.Write{Operation: "create", Article: a})
+			if oldWrite != nil && oldWrite.Operation == "create" {
+				id, err := db.AddArticle(oldWrite.Article)
+				c.CheckErr(err)
+				intId := int(id)
+				if intId > a.Id {
+					cache.SetNewestId(intId)
+				}
+			}
+		} else {
+			log.Fatalf("Actually, the method was %v\n", r.Method)
 		}
-	} else {
-		log.Fatalf("Actually, the method was %v\n", r.Method)
-	}
+	}(cache, db)
 	enc := json.NewEncoder(w)
 	enc.Encode(cache.NewestId)
 	// w.WriteHeader(201)
@@ -134,12 +135,13 @@ func getHumanInterestArticles(w http.ResponseWriter, r *http.Request) {
 		cache.ResetTimer(timerDuration)
 
 	}
+	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+		if limit < coldCapacity {
+			updateCache(cache, articles)
+		}
+	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	if limit < coldCapacity {
-		updateCache(articles)
-	} else {
-		// fmt.Println("Not updating the cache because the limit is too large")
-	}
+	
 }
 func getInternationalAffairsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -151,12 +153,13 @@ func getInternationalAffairsArticles(w http.ResponseWriter, r *http.Request) {
 		cache.ResetTimer(timerDuration)
 
 	}
+	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+		if limit < coldCapacity {
+			updateCache(cache, articles)
+		}
+	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	if limit < coldCapacity {
-		updateCache(articles)
-	} else {
-		// fmt.Println("Not updating the cache because the limit is too large")
-	}
+	
 }
 func getSportsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -168,12 +171,13 @@ func getSportsArticles(w http.ResponseWriter, r *http.Request) {
 		cache.ResetTimer(timerDuration)
 
 	}
+	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+		if limit < coldCapacity {
+			updateCache(cache, articles)
+		}
+	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	if limit < coldCapacity {
-		updateCache(articles)
-	} else {
-		// fmt.Println("Not updating the cache because the limit is too large")
-	}
+
 }
 func getPoliticsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -185,12 +189,13 @@ func getPoliticsArticles(w http.ResponseWriter, r *http.Request) {
 		cache.ResetTimer(timerDuration)
 
 	}
+	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+		if limit < coldCapacity {
+			updateCache(cache, articles)
+		}
+	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	if limit < coldCapacity {
-		updateCache(articles)
-	} else {
-		// fmt.Println("Not updating the cache because the limit is too large")
-	}
+	
 }
 func getScienceTechnologyArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -202,12 +207,13 @@ func getScienceTechnologyArticles(w http.ResponseWriter, r *http.Request) {
 		cache.ResetTimer(timerDuration)
 
 	}
+	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+		if limit < coldCapacity {
+			updateCache(cache, articles)
+		}
+	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	if limit < coldCapacity {
-		updateCache(articles)
-	} else {
-		// fmt.Println("Not updating the cache because the limit is too large")
-	}
+	
 }
 func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -219,12 +225,13 @@ func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
 		cache.ResetTimer(timerDuration)
 
 	}
+	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+		if limit < coldCapacity {
+			updateCache(cache, articles)
+		}
+	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	if limit < coldCapacity {
-		updateCache(articles)
-	} else {
-		// fmt.Println("Not updating the cache because the limit is too large")
-	}
+	
 }
 
 //	func getFrontPageArticles(w http.ResponseWriter, r *http.Request) {
@@ -250,12 +257,13 @@ func getBreakingNewsArticles(w http.ResponseWriter, r *http.Request) {
 		cache.ResetTimer(timerDuration)
 
 	}
+	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+		if limit < coldCapacity {
+			updateCache(cache, articles)
+		}
+	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	if limit < coldCapacity {
-		updateCache(articles)
-	} else {
-		// fmt.Println("Not updating the cache because the limit is too large")
-	}
+	
 }
 func getArtsCultureArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -267,12 +275,12 @@ func getArtsCultureArticles(w http.ResponseWriter, r *http.Request) {
 		cache.ResetTimer(timerDuration)
 
 	}
+	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+		if limit < coldCapacity {
+			updateCache(cache, articles)
+		}
+	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	if limit < coldCapacity {
-		updateCache(articles)
-	} else {
-		// fmt.Println("Not updating the cache because the limit is too large")
-	}
 }
 
 func getArticleById(w http.ResponseWriter, r *http.Request) {
@@ -286,8 +294,10 @@ func getArticleById(w http.ResponseWriter, r *http.Request) {
 	}
 	articles := make([]*c.Article, 1)
 	articles[0] = article
+	go func(cache *c.Cache, articles []*c.Article) {
+		updateCache(cache, articles)
+	}(cache, articles)
 	encodeArticles(w, articles)
-	updateCache(articles)
 }
 
 func encodeArticles(w http.ResponseWriter, articles []*c.Article) {
@@ -303,7 +313,7 @@ func encodeArticles(w http.ResponseWriter, articles []*c.Article) {
 	// fmt.Printf("Num articles Encoded: %d\n", numArticlesEncoded)
 }
 
-func updateCache(articles []*c.Article) {
+func updateCache(cache *c.Cache, articles []*c.Article) {
 	for i := len(articles) - 1; i >= 0; i-- {
 		cache.Add(articles[i])
 	}

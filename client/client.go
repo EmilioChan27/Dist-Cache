@@ -21,7 +21,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 1000)
 	overallTimer := time.NewTimer(testDuration)
-	maxId := 53722
+	maxId := 53738
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
@@ -30,7 +30,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 
 	execTimeStringChan := make(chan string, 1000)
 	go func() {
-		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
+		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-cache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
 		c.CheckErr(err)
 		file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
 		for {
