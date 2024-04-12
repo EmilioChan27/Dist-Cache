@@ -26,17 +26,16 @@ func actualTest(numClients int, testDuration time.Duration) {
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
 	waitTimeMean := 65
-	waitTimeStdDev := 5
-	file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
-	c.CheckErr(err)
-	file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
+	waitTimeStdDev := 15
+
+	execTimeStringChan := make(chan string, 1000)
 outerlabel:
 	for {
 		select {
 		case <-overallTimer.C:
 			break outerlabel
 		case <-clients:
-			go func(zipf *rand.Zipf, maxId int, file *os.File, mean int, stddev int) {
+			go func(zipf *rand.Zipf, maxId int, mean int, stddev int) {
 				waitTime := int(math.Abs(rand.NormFloat64()*float64(stddev) + float64(mean)))
 				id := maxId - int(zipf.Uint64())
 				for i := 0; i < waitTime; i++ {
@@ -52,16 +51,16 @@ outerlabel:
 				}
 				execTime := time.Since(beforeTime).Microseconds()
 				execTimeString := fmt.Sprintf("%v\n", execTime)
-				file.WriteString(execTimeString)
+				execTimeStringChan <- execTimeString
 				clients <- 1
-			}(zipf, maxId, file, waitTimeMean, waitTimeStdDev)
+			}(zipf, maxId, waitTimeMean, waitTimeStdDev)
 		case newMaxId := <-writes:
 			if newMaxId > maxId {
 				maxId = newMaxId
 			}
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(300 * time.Millisecond)
+				time.Sleep(2 * time.Second)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
@@ -69,6 +68,17 @@ outerlabel:
 		}
 	}
 
+	go func() {
+		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
+		c.CheckErr(err)
+		file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
+		for {
+			select {
+			case str := <-execTimeStringChan:
+				file.WriteString(str)
+			}
+		}
+	}()
 }
 
 func getArticleById(id int) *http.Response {
