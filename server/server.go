@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	// "log"
 	"net/http"
@@ -15,14 +16,13 @@ import (
 
 // var numRequests int = 0
 var db *d.DB
-var cache *c.Cache
-var coldCapacity int
-var hotCapacity int
-var timerDuration time.Duration
-var writeChanLen int
+var file *os.File
 
 func main() {
 	db = d.NewDB()
+	file, err := os.Create("dbAccessTime.txt")
+	c.CheckErr(err)
+	file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 	// coldCapacity = 350
 	// hotCapacity = 350
 	// timerDuration = 60 * time.Second
@@ -52,6 +52,10 @@ func main() {
 	// startTimer(cache)
 	fmt.Println("Server is running on port 8080...")
 	http.ListenAndServe(":8080", nil)
+}
+
+func recordDBExecTime(beforeTime time.Time) {
+	file.WriteString(fmt.Sprintf("%v\n", time.Since(beforeTime).Microseconds()))
 }
 
 // func startTimer(cache *c.Cache) {
@@ -105,7 +109,9 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 	// } else {
 	// 	log.Fatalf("Actually, the method was %v\n", r.Method)
 	// }
+	beforeTime := time.Now()
 	newId, err := db.AddArticle(a)
+	recordDBExecTime(beforeTime)
 	// a.Id = int(newId)
 	c.CheckErr(err)
 	enc := json.NewEncoder(w)
@@ -122,7 +128,9 @@ func getHumanInterestArticles(w http.ResponseWriter, r *http.Request) {
 	// 	cache.ResetTimer(timerDuration)
 
 	// }
+	beforeTime := time.Now()
 	articles, err := db.GetArticlesByCategory("Human Interest", limit)
+	recordDBExecTime(beforeTime)
 	c.CheckErr(err)
 	encodeArticles(w, articles)
 	// if limit < coldCapacity {
@@ -139,7 +147,10 @@ func getInternationalAffairsArticles(w http.ResponseWriter, r *http.Request) {
 	// 	cache.ResetTimer(timerDuration)
 
 	// }
+	beforeTime := time.Now()
 	articles, err := db.GetArticlesByCategory("International Affairs", limit)
+	recordDBExecTime(beforeTime)
+
 	c.CheckErr(err)
 	encodeArticles(w, articles)
 	// if limit < coldCapacity {
@@ -156,7 +167,10 @@ func getSportsArticles(w http.ResponseWriter, r *http.Request) {
 	// 	cache.ResetTimer(timerDuration)
 
 	// }
+	beforeTime := time.Now()
 	articles, err := db.GetArticlesByCategory("Sports", limit)
+	recordDBExecTime(beforeTime)
+
 	c.CheckErr(err)
 	encodeArticles(w, articles)
 	// if limit < coldCapacity {
@@ -173,7 +187,10 @@ func getPoliticsArticles(w http.ResponseWriter, r *http.Request) {
 	// 	cache.ResetTimer(timerDuration)
 
 	// }
+	beforeTime := time.Now()
 	articles, err := db.GetArticlesByCategory("Politics", limit)
+	recordDBExecTime(beforeTime)
+
 	c.CheckErr(err)
 	encodeArticles(w, articles)
 	// if limit < coldCapacity {
@@ -190,7 +207,10 @@ func getScienceTechnologyArticles(w http.ResponseWriter, r *http.Request) {
 	// 	cache.ResetTimer(timerDuration)
 
 	// }
+	beforeTime := time.Now()
 	articles, err := db.GetArticlesByCategory("Politics", limit)
+	recordDBExecTime(beforeTime)
+
 	c.CheckErr(err)
 	encodeArticles(w, articles)
 	// if limit < coldCapacity {
@@ -207,7 +227,10 @@ func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
 	// 	cache.ResetTimer(timerDuration)
 
 	// }
+	beforeTime := time.Now()
 	articles, err := db.GetArticlesByCategory("Politics", limit)
+	recordDBExecTime(beforeTime)
+
 	c.CheckErr(err)
 	encodeArticles(w, articles)
 	// if limit < coldCapacity {
@@ -224,7 +247,10 @@ func getFrontPageArticles(w http.ResponseWriter, r *http.Request) {
 	// 	cache.ResetTimer(timerDuration)
 
 	// }
+	beforeTime := time.Now()
 	articles, err := db.GetArticlesByCategory("Politics", limit)
+	recordDBExecTime(beforeTime)
+
 	c.CheckErr(err)
 	encodeArticles(w, articles)
 	// if limit < coldCapacity {
@@ -241,7 +267,10 @@ func getBreakingNewsArticles(w http.ResponseWriter, r *http.Request) {
 	// 	cache.ResetTimer(timerDuration)
 
 	// }
+	beforeTime := time.Now()
 	articles, err := db.GetArticlesByCategory("Breaking News", limit)
+	recordDBExecTime(beforeTime)
+
 	c.CheckErr(err)
 	encodeArticles(w, articles)
 	// if limit < coldCapacity {
@@ -258,7 +287,10 @@ func getArtsCultureArticles(w http.ResponseWriter, r *http.Request) {
 	// 	cache.ResetTimer(timerDuration)
 
 	// }
+	beforeTime := time.Now()
 	articles, err := db.GetArticlesByCategory("Arts and Culture", limit)
+	recordDBExecTime(beforeTime)
+
 	c.CheckErr(err)
 	encodeArticles(w, articles)
 	// if limit < coldCapacity {
@@ -275,7 +307,9 @@ func getArticleById(w http.ResponseWriter, r *http.Request) {
 	// if article == nil {
 	// 	cache.ResetTimer(timerDuration)
 	// }
+	beforeTime := time.Now()
 	article, err := db.GetArticleById(id)
+	recordDBExecTime(beforeTime)
 	c.CheckErr(err)
 	articles := make([]*c.Article, 1)
 	articles[0] = article

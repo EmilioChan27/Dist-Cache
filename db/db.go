@@ -151,9 +151,9 @@ func (db *DB) GetArticleById(id int) (*c.Article, error) {
 	err := db.checkDb()
 	c.CheckErr(err)
 	tsql := `SELECT * FROM IWSchema.Articles WHERE Id = @Id`
-	beforeTime := time.Now()
+	// beforeTime := time.Now()
 	row, err := db.InnerDB.QueryContext(db.Ctx, tsql, sql.Named("Id", id))
-	fmt.Printf("True DB exec Time- ID: %v\n", time.Since(beforeTime))
+	// fmt.Printf("True DB exec Time- ID: %v\n", time.Since(beforeTime))
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -181,9 +181,9 @@ func (db *DB) GetArticlesByCategory(category string, limit int) ([]*c.Article, e
 	pattern := "%" + category + "%"
 	tsql := fmt.Sprintf(`DECLARE @CategoryPattern NVARCHAR(50) = '%s'
 	SELECT %s* FROM IWSchema.Articles WHERE Category LIKE @CategoryPattern ORDER BY UpdatedAt DESC;`, pattern, limitStr)
-	beforeTime := time.Now()
+	// beforeTime := time.Now()
 	rows, err := db.InnerDB.QueryContext(db.Ctx, tsql)
-	fmt.Printf("True DB exec Time: %v\n", time.Since(beforeTime))
+	// fmt.Printf("True DB exec Time: %v\n", time.Since(beforeTime))
 	articleList := make([]*c.Article, limit)
 	if err != nil {
 		fmt.Println(err)
@@ -213,9 +213,9 @@ func (db *DB) GetNewestArticles(limit int) ([]*c.Article, int, error) {
 	c.CheckErr(err)
 	tsql := `DECLARE @Limit INT = @InputLimit;
 	SELECT TOP (@Limit) * FROM IWSchema.Articles ORDER BY UpdatedAt DESC;`
-	beforeTime := time.Now()
+	// beforeTime := time.Now()
 	rows, err := db.InnerDB.QueryContext(db.Ctx, tsql, sql.Named("InputLimit", limit))
-	fmt.Printf("True DB exec Time: %v\n", time.Since(beforeTime))
+	// fmt.Printf("True DB exec Time: %v\n", time.Since(beforeTime))
 	articleList := make([]*c.Article, limit)
 	if err != nil {
 		fmt.Println(err)
@@ -293,9 +293,9 @@ func (db *DB) AddArticle(a *c.Article) (int64, error) {
 	tsql := `INSERT INTO IWSchema.Articles (AuthorId, Category, Title, ImageUrl, Content, CreatedAt, UpdatedAt, Likes, Size) VALUES(@AuthorId, @Category, @Title, @ImageUrl, @Content, @CreatedAt, @UpdatedAt, @Likes, @Size);
 	      select isNull(SCOPE_IDENTITY(), -1);
 	`
-	beforeTime := time.Now()
+	// beforeTime := time.Now()
 	stmt, err := db.InnerDB.Prepare(tsql)
-	fmt.Printf("True DB exec time - Add: %v\n", time.Since(beforeTime))
+	// fmt.Printf("True DB exec time - Add: %v\n", time.Since(beforeTime))
 	if err != nil {
 		return -1, err
 	}

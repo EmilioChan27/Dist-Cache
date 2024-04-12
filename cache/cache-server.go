@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -19,6 +20,8 @@ var coldCapacity int
 var hotCapacity int
 var timerDuration time.Duration
 var writeChanLen int
+var cacheFile *os.File
+var dbFile *os.File
 
 func main() {
 	db = d.NewDB()
@@ -26,6 +29,14 @@ func main() {
 	hotCapacity = 350
 	timerDuration = 60 * time.Second
 	writeChanLen = 75
+	cacheFileName := fmt.Sprintf("cacheFileAccesTime.txt:%v", time.Now())
+	cacheFile, err := os.Create(cacheFileName)
+	c.CheckErr(err)
+	cacheFile.WriteString("init\n")
+	dbFileName := fmt.Sprintf("dbFileAccessTime.txt:%v", time.Now())
+	dbFile, err := os.Create(dbFileName)
+	c.CheckErr(err)
+	dbFile.WriteString("init\n")
 	// // articles := make([]*c.Article, 10)
 	articles, newestId, err := db.GetNewestArticles(750)
 	cache = c.NewCache(coldCapacity, hotCapacity, timerDuration, writeChanLen, newestId)
@@ -141,7 +152,7 @@ func getHumanInterestArticles(w http.ResponseWriter, r *http.Request) {
 		}
 	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	
+
 }
 func getInternationalAffairsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -159,7 +170,7 @@ func getInternationalAffairsArticles(w http.ResponseWriter, r *http.Request) {
 		}
 	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	
+
 }
 func getSportsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -195,7 +206,7 @@ func getPoliticsArticles(w http.ResponseWriter, r *http.Request) {
 		}
 	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	
+
 }
 func getScienceTechnologyArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -213,7 +224,7 @@ func getScienceTechnologyArticles(w http.ResponseWriter, r *http.Request) {
 		}
 	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	
+
 }
 func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -231,7 +242,7 @@ func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
 		}
 	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	
+
 }
 
 //	func getFrontPageArticles(w http.ResponseWriter, r *http.Request) {
@@ -263,7 +274,7 @@ func getBreakingNewsArticles(w http.ResponseWriter, r *http.Request) {
 		}
 	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
-	
+
 }
 func getArtsCultureArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))

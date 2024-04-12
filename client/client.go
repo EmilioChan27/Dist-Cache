@@ -15,8 +15,8 @@ import (
 )
 
 func main() {
-	for i := 0; i < 3; i++ {
-		actualTest(150, 5*time.Minute, 1)
+	for i := 0; i < 1; i++ {
+		actualTest(750, 3*time.Minute, i)
 	}
 }
 func actualTest(numClients int, testDuration time.Duration, run int) {
@@ -32,9 +32,9 @@ func actualTest(numClients int, testDuration time.Duration, run int) {
 
 	execTimeStringChan := make(chan string, 1000)
 	go func(run int) {
-		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-cache-1pctWrites-%d.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean, run))
+		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-nocache-1pctWrites-%d.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean, run))
 		c.CheckErr(err)
-		file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
+		file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 		for {
 			select {
 			case str := <-execTimeStringChan:
@@ -45,6 +45,8 @@ func actualTest(numClients int, testDuration time.Duration, run int) {
 	for {
 		select {
 		case <-overallTimer.C:
+			time.Sleep(5 * time.Second)
+			execTimeStringChan <- fmt.Sprintf("%v\n", time.Now())
 			return
 		case <-clients:
 			go func(zipf *rand.Zipf, maxId int, mean int, stddev int) {
