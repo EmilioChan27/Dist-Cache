@@ -26,7 +26,7 @@ func main() {
 	// 	fmt.Println("HELLO")
 	// }
 	c.CheckErr(err)
-	defer file.Close()
+	// defer file.Close()
 	// c.CheckErr(err)
 	file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 	// coldCapacity = 350
@@ -63,9 +63,10 @@ func main() {
 
 func recordDBExecTime(beforeTime time.Time) {
 	file, err := os.OpenFile("dbAccessTime.txt", os.O_APPEND, os.ModeAppend)
-	defer file.Close()
+	// defer file.Close()
 	c.CheckErr(err)
 	file.WriteString(fmt.Sprintf("%v\n", time.Since(beforeTime).Microseconds()))
+	fmt.Println("just wrote to file")
 }
 
 // func startTimer(cache *c.Cache) {
