@@ -15,9 +15,11 @@ import (
 )
 
 func main() {
-	actualTest(150, 5*time.Minute)
+	for i := 0; i < 3; i++ {
+		actualTest(150, 5*time.Minute, 1)
+	}
 }
-func actualTest(numClients int, testDuration time.Duration) {
+func actualTest(numClients int, testDuration time.Duration, run int) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 1000)
 	overallTimer := time.NewTimer(testDuration)
@@ -29,8 +31,8 @@ func actualTest(numClients int, testDuration time.Duration) {
 	waitTimeStdDev := 15
 
 	execTimeStringChan := make(chan string, 1000)
-	go func() {
-		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-cache-1pctWrites.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean))
+	go func(run int) {
+		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-cache-1pctWrites-%d.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean, run))
 		c.CheckErr(err)
 		file.WriteString("overallTimer := time.NewTimer(testDuration)\nmaxId := 51476\nsrc := rand.NewSource(int64(maxId))\nzipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))\n")
 		for {
@@ -39,7 +41,7 @@ func actualTest(numClients int, testDuration time.Duration) {
 				file.WriteString(str)
 			}
 		}
-	}()
+	}(run)
 	for {
 		select {
 		case <-overallTimer.C:
