@@ -22,6 +22,9 @@ var db *d.DB
 func main() {
 	db = d.NewDB()
 	file, err := os.OpenFile("dbAccessTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		fmt.Println("HELLO")
+	}
 	c.CheckErr(err)
 	defer file.Close()
 	c.CheckErr(err)
