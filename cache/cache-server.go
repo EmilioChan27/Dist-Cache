@@ -20,8 +20,6 @@ var coldCapacity int
 var hotCapacity int
 var timerDuration time.Duration
 var writeChanLen int
-var cacheFile *os.File
-var dbFile *os.File
 
 func main() {
 	db = d.NewDB()
@@ -29,14 +27,19 @@ func main() {
 	hotCapacity = 350
 	timerDuration = 60 * time.Second
 	writeChanLen = 75
-	cacheFileName := fmt.Sprintf("cacheFileAccesTime.txt:%v", time.Now())
-	cacheFile, err := os.Create(cacheFileName)
+	cacheFile, err := os.OpenFile("cacheAccessTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	c.CheckErr(err)
-	cacheFile.WriteString("init\n")
-	dbFileName := fmt.Sprintf("dbFileAccessTime.txt:%v", time.Now())
-	dbFile, err := os.Create(dbFileName)
+	cacheFile.WriteString(fmt.Sprintf("%v\n", time.Now()))
+	cacheFile.Close()
+	dbFile, err := os.OpenFile("dbAccessTimeCacheServer.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	c.CheckErr(err)
-	dbFile.WriteString("init\n")
+	dbFile.WriteString(fmt.Sprintf("%v\n", time.Now()))
+	dbFile.Close()
+	cacheUpdateFile, err := os.OpenFile("cacheUpdateTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	c.CheckErr(err)
+	cacheUpdateFile.WriteString(fmt.Sprintf("%v\n", time.Now()))
+	cacheUpdateFile.Close()
+
 	// // articles := make([]*c.Article, 10)
 	articles, newestId, err := db.GetNewestArticles(750)
 	cache = c.NewCache(coldCapacity, hotCapacity, timerDuration, writeChanLen, newestId)
@@ -62,6 +65,29 @@ func main() {
 	startTimer(cache)
 	fmt.Println("Server is running on port 8080...")
 	http.ListenAndServe(":8080", nil)
+}
+
+func recordCacheExecTime(beforeTime time.Time) {
+	file, err := os.OpenFile("cacheAccessTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	// defer file.Close()
+	c.CheckErr(err)
+	file.WriteString(fmt.Sprintf("%v\n", time.Since(beforeTime).Microseconds()))
+	file.Close()
+}
+func recordDBExecTime(beforeTime time.Time) {
+	file, err := os.OpenFile("dbAccessTimeCacheServer.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	// defer file.Close()
+	c.CheckErr(err)
+	file.WriteString(fmt.Sprintf("%v\n", time.Since(beforeTime).Microseconds()))
+	file.Close()
+}
+
+func recordCacheUpdateTime(beforeTime time.Time) {
+	file, err := os.OpenFile("cacheUpdateTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	// defer file.Close()
+	c.CheckErr(err)
+	file.WriteString(fmt.Sprintf("%v\n", time.Since(beforeTime).Microseconds()))
+	file.Close()
 }
 
 func startTimer(cache *c.Cache) {
@@ -118,7 +144,9 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 		} else if r.Method == "POST" {
 			// fmt.Println("am about to create a write")
 			cache.Add(a)
+			beforeTime := time.Now()
 			oldWrite := cache.AddWrite(&c.Write{Operation: "create", Article: a})
+			recordCacheUpdateTime(beforeTime)
 			if oldWrite != nil && oldWrite.Operation == "create" {
 				id, err := db.AddArticle(oldWrite.Article)
 				c.CheckErr(err)
@@ -139,16 +167,22 @@ func writeHandler(w http.ResponseWriter, r *http.Request) {
 func getHumanInterestArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	c.CheckErr(err)
+	beforeTime := time.Now()
 	articles := cache.GetArticlesByCategory("Human Interest", limit, true)
 	if len(articles) < limit {
+		beforeTime = time.Now()
 		articles, err = db.GetArticlesByCategory("Human Interest", limit)
+		recordDBExecTime(beforeTime)
 		c.CheckErr(err)
 		cache.ResetTimer(timerDuration)
-
+	} else {
+		recordCacheExecTime(beforeTime)
 	}
 	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
 		if limit < coldCapacity {
+			beforeTime = time.Now()
 			updateCache(cache, articles)
+			recordCacheUpdateTime(beforeTime)
 		}
 	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
@@ -297,16 +331,23 @@ func getArtsCultureArticles(w http.ResponseWriter, r *http.Request) {
 func getArticleById(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	c.CheckErr(err)
+	beforeTime := time.Now()
 	article := cache.GetArticleById(id)
 	if article == nil {
+		beforeTime = time.Now()
 		article, err = db.GetArticleById(id)
+		recordDBExecTime(beforeTime)
 		c.CheckErr(err)
 		cache.ResetTimer(timerDuration)
+	} else {
+		recordCacheExecTime(beforeTime)
 	}
 	articles := make([]*c.Article, 1)
 	articles[0] = article
 	go func(cache *c.Cache, articles []*c.Article) {
+		beforeTime := time.Now()
 		updateCache(cache, articles)
+		recordCacheUpdateTime(beforeTime)
 	}(cache, articles)
 	encodeArticles(w, articles)
 }
