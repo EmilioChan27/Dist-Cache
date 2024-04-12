@@ -21,14 +21,14 @@ var db *d.DB
 
 func main() {
 	db = d.NewDB()
-	// file, err := os.OpenFile("dbAccessTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	file, err := os.OpenFile("dbAccessTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	// if err != nil {
 	// 	fmt.Println("HELLO")
 	// }
+	c.CheckErr(err)
+	defer file.Close()
 	// c.CheckErr(err)
-	// // defer file.Close()
-	// c.CheckErr(err)
-	// file.WriteString(fmt.Sprintf("%v\n", time.Now()))
+	file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 	// coldCapacity = 350
 	// hotCapacity = 350
 	// timerDuration = 60 * time.Second
@@ -63,7 +63,7 @@ func main() {
 
 func recordDBExecTime(beforeTime time.Time) {
 	file, err := os.OpenFile("dbAccessTime.txt", os.O_APPEND, os.ModeAppend)
-	// defer file.Close()
+	defer file.Close()
 	c.CheckErr(err)
 	file.WriteString(fmt.Sprintf("%v\n", time.Since(beforeTime).Microseconds()))
 }
