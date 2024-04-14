@@ -148,6 +148,7 @@ func (db *DB) CreateAuthor(a *c.Author) (int64, error) {
 }
 
 func (db *DB) GetArticleById(id int) (*c.Article, error) {
+	beforeTime := time.Now()
 	err := db.checkDb()
 	c.CheckErr(err)
 	tsql := `SELECT * FROM IWSchema.Articles WHERE Id = @Id`
@@ -159,6 +160,7 @@ func (db *DB) GetArticleById(id int) (*c.Article, error) {
 		return nil, err
 	}
 	defer row.Close()
+	fmt.Printf("exec time: %v\n", time.Since(beforeTime).Microseconds())
 	// beforeTime = time.Now()
 	var a *c.Article = &c.Article{}
 	for row.Next() {
