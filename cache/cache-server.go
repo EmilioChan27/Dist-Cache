@@ -25,7 +25,7 @@ func main() {
 	db = d.NewDB()
 	coldCapacity = 350
 	hotCapacity = 350
-	timerDuration = 60 * time.Second
+	timerDuration = 55 * time.Second
 	writeChanLen = 75
 	cacheFile, err := os.OpenFile("cacheAccessTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	c.CheckErr(err)
