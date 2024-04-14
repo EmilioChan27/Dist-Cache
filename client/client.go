@@ -15,11 +15,12 @@ import (
 )
 
 func main() {
-	for i := 0; i < 3; i++ {
-		actualTest(500, 5*time.Minute, i)
-	}
+	actualTest(2500, 10*time.Minute, 20, 0, "bursty")
+	actualTest(1, 90*time.Minute, 270, 1, "bursty")
+	actualTest(500, 10*time.Minute, 30, 2, "bursty")
+
 }
-func actualTest(numClients int, testDuration time.Duration, run int) {
+func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, run int, label string) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 1000)
 	overallTimer := time.NewTimer(testDuration)
@@ -27,12 +28,11 @@ func actualTest(numClients int, testDuration time.Duration, run int) {
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	waitTimeMean := 65
 	waitTimeStdDev := 15
 
 	execTimeStringChan := make(chan string, 1000)
 	go func(run int) {
-		file, err := os.Create(fmt.Sprintf("%dclients-%vduration-pause%d+%ds-cache-1pctWrites-%d.txt", numClients, testDuration, waitTimeStdDev, waitTimeMean, run))
+		file, err := os.Create(fmt.Sprintf("%s-%dclients-%vduration-pause%d+%ds-cache-1pctWrites-%d.txt", label, numClients, testDuration, waitTimeStdDev, waitTimeMean, run))
 		c.CheckErr(err)
 		file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 		for {
@@ -74,7 +74,7 @@ func actualTest(numClients int, testDuration time.Duration, run int) {
 			}
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(20 * time.Millisecond)
+				time.Sleep(50 * time.Millisecond)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
