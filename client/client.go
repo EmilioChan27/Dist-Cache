@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	actualTest(10, 7*time.Hour, 3700, 0, "burstycs")
+	actualTest(10, 7*time.Hour, 1, 0, "burstycs")
 	// actualTest(2500, 10*time.Minute, 20, 0, "bursty")
 	// actualTest(1, 90*time.Minute, 270, 1, "bursty")
 	// actualTest(500, 10*time.Minute, 30, 2, "bursty")
