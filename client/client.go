@@ -15,9 +15,10 @@ import (
 )
 
 func main() {
-	actualTest(2500, 10*time.Minute, 20, 0, "bursty")
-	actualTest(1, 90*time.Minute, 270, 1, "bursty")
-	actualTest(500, 10*time.Minute, 30, 2, "bursty")
+	getBurstySectionArticles()
+	// actualTest(2500, 10*time.Minute, 20, 0, "bursty")
+	// actualTest(1, 90*time.Minute, 270, 1, "bursty")
+	// actualTest(500, 10*time.Minute, 30, 2, "bursty")
 
 }
 func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, run int, label string) {
@@ -233,6 +234,73 @@ func latencyTest() {
 // 	file.WriteString(fmt.Sprintf("Num Writes: %d\n", len(writeChan)))
 // 	file.WriteString(fmt.Sprintf("Num long queries: %d\n", len(longQueryChan)))
 // }
+
+func getBurstySectionArticles() *http.Response {
+	serverUrl := "http://LX-Server:8080/"
+	var res *http.Response
+	var err error
+	for i := 0; i < 10; i++ {
+		go func(idx int) {
+			beforeTime := time.Now()
+			if idx%9 == 0 {
+				res, err = http.Get(serverUrl + "human-interest?limit=75")
+				// fmt.Println("human interest")
+			} else if idx%8 == 0 {
+				res, err = http.Get(serverUrl + "business?limit=75")
+				// fmt.Println("business")
+			} else if idx%7 == 0 {
+				res, err = http.Get(serverUrl + "international-affairs?limit=75")
+				// fmt.Println("international affairs")
+			} else if idx%6 == 0 {
+				res, err = http.Get(serverUrl + "science-technology?limit=75")
+				// fmt.Println("science and technology")
+			} else if idx%5 == 0 {
+				res, err = http.Get(serverUrl + "arts-culture?limit=75")
+				// fmt.Println("arts and culture")
+			} else if idx%4 == 0 {
+				res, err = http.Get(serverUrl + "politics?limit=75")
+				// fmt.Println("politics")
+			} else if idx%3 == 0 {
+				res, err = http.Get(serverUrl + "sports?limit=75")
+				// fmt.Println("sports")
+			} else {
+				res, err = http.Get(serverUrl + "breaking-news?limit=75")
+				// fmt.Println("Breaking News")
+			}
+			fmt.Printf("%v\n", time.Since(beforeTime).Microseconds())
+		}(i)
+	}
+	// i := rand.Intn(10)
+
+	// if i%9 == 0 {
+	// 	res, err = http.Get(serverUrl + "human-interest?limit=75")
+	// 	// fmt.Println("human interest")
+	// } else if i%8 == 0 {
+	// 	res, err = http.Get(serverUrl + "business?limit=75")
+	// 	// fmt.Println("business")
+	// } else if i%7 == 0 {
+	// 	res, err = http.Get(serverUrl + "international-affairs?limit=75")
+	// 	// fmt.Println("international affairs")
+	// } else if i%6 == 0 {
+	// 	res, err = http.Get(serverUrl + "science-technology?limit=75")
+	// 	// fmt.Println("science and technology")
+	// } else if i%5 == 0 {
+	// 	res, err = http.Get(serverUrl + "arts-culture?limit=75")
+	// 	// fmt.Println("arts and culture")
+	// } else if i%4 == 0 {
+	// 	res, err = http.Get(serverUrl + "politics?limit=75")
+	// 	// fmt.Println("politics")
+	// } else if i%3 == 0 {
+	// 	res, err = http.Get(serverUrl + "sports?limit=75")
+	// 	// fmt.Println("sports")
+	// } else {
+	// 	res, err = http.Get(serverUrl + "breaking-news?limit=75")
+	// 	// fmt.Println("Breaking News")
+	// }
+	time.Sleep(15 * time.Second)
+	c.CheckErr(err)
+	return res
+}
 
 func getSectionArticles() *http.Response {
 	serverUrl := "http://LX-Server:8080/"
