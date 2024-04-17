@@ -300,7 +300,7 @@ func getBurstySectionArticles() *http.Response {
 	// 	res, err = http.Get(serverUrl + "breaking-news?limit=75")
 	// 	// fmt.Println("Breaking News")
 	// }
-	time.Sleep(15 * time.Second)
+	time.Sleep(3 * time.Second)
 	c.CheckErr(err)
 	return res
 }
