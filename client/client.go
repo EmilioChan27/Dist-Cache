@@ -239,13 +239,14 @@ func getBurstySectionArticles() *http.Response {
 	serverUrl := "http://LX-Server:8080/"
 	var res *http.Response
 	var err error
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 15; i++ {
 		go func(idx int) {
+			time.Sleep(8*time.Millisecond)
 			beforeTime := time.Now()
 			if idx%9 == 0 {
 				res, err = http.Get(serverUrl + "human-interest?limit=75")
 				// fmt.Println("human interest")
-			} else if idx%8 == 0 {
+				} else if idx%8 == 0 {
 				res, err = http.Get(serverUrl + "business?limit=75")
 				// fmt.Println("business")
 			} else if idx%7 == 0 {
@@ -263,9 +264,11 @@ func getBurstySectionArticles() *http.Response {
 			} else if idx%3 == 0 {
 				res, err = http.Get(serverUrl + "sports?limit=75")
 				// fmt.Println("sports")
-			} else {
+			} else if idx % 2 == 0{
 				res, err = http.Get(serverUrl + "breaking-news?limit=75")
 				// fmt.Println("Breaking News")
+			} else {
+				res, err = http.Get(serverUrl + "front-page?limit=75")
 			}
 			fmt.Printf("%v\n", time.Since(beforeTime).Microseconds())
 		}(i)
