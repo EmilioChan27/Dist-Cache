@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -15,7 +14,7 @@ import (
 )
 
 func main() {
-	getBurstySectionArticles()
+	actualTest(10, 7*time.Hour, 3700, 0, "burstycs")
 	// actualTest(2500, 10*time.Minute, 20, 0, "bursty")
 	// actualTest(1, 90*time.Minute, 270, 1, "bursty")
 	// actualTest(500, 10*time.Minute, 30, 2, "bursty")
@@ -29,7 +28,7 @@ func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, ru
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	waitTimeStdDev := 15
+	waitTimeStdDev := 1
 
 	execTimeStringChan := make(chan string, 1000)
 	go func(run int) {
@@ -51,19 +50,22 @@ func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, ru
 			return
 		case <-clients:
 			go func(zipf *rand.Zipf, maxId int, mean int, stddev int) {
-				waitTime := int(math.Abs(rand.NormFloat64()*float64(stddev) + float64(mean)))
+				// waitTime := int(math.Abs(rand.NormFloat64()*float64(stddev) + float64(mean)))
+				waitTime := mean
 				id := maxId - int(zipf.Uint64())
 				for i := 0; i < waitTime; i++ {
 					time.Sleep(1 * time.Second)
 				}
-				writeOrGet := rand.Intn(150)
+				// writeOrGet := rand.Intn(150)
 				beforeTime := time.Now()
-				if writeOrGet == 0 {
-					newMaxId := insertArticle()
-					writes <- newMaxId
-				} else {
-					getArticleById(id)
-				}
+				section := id % 10
+				getBurstySectionArticles(section)
+				// if writeOrGet == 0 {
+				// 	newMaxId := insertArticle()
+				// 	writes <- newMaxId
+				// } else {
+				// 	getArticleById(id)
+				// }
 				execTime := time.Since(beforeTime).Microseconds()
 				execTimeString := fmt.Sprintf("%v\n", execTime)
 				execTimeStringChan <- execTimeString
@@ -75,7 +77,7 @@ func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, ru
 			}
 		default:
 			if actualNumClients < numClients {
-				time.Sleep(50 * time.Millisecond)
+				time.Sleep(5 * time.Millisecond)
 				clients <- 1
 				actualNumClients++
 				fmt.Printf("Current numClients: %d\n", actualNumClients)
@@ -235,44 +237,39 @@ func latencyTest() {
 // 	file.WriteString(fmt.Sprintf("Num long queries: %d\n", len(longQueryChan)))
 // }
 
-func getBurstySectionArticles() *http.Response {
+func getBurstySectionArticles(idx int) *http.Response {
 	serverUrl := "http://LX-Server:8080/"
 	var res *http.Response
 	var err error
-	for i := 0; i < 15; i++ {
-		go func(idx int) {
-			time.Sleep(8*time.Millisecond)
-			beforeTime := time.Now()
-			if idx%9 == 0 {
-				res, err = http.Get(serverUrl + "human-interest?limit=75")
-				// fmt.Println("human interest")
-				} else if idx%8 == 0 {
-				res, err = http.Get(serverUrl + "business?limit=75")
-				// fmt.Println("business")
-			} else if idx%7 == 0 {
-				res, err = http.Get(serverUrl + "international-affairs?limit=75")
-				// fmt.Println("international affairs")
-			} else if idx%6 == 0 {
-				res, err = http.Get(serverUrl + "science-technology?limit=75")
-				// fmt.Println("science and technology")
-			} else if idx%5 == 0 {
-				res, err = http.Get(serverUrl + "arts-culture?limit=75")
-				// fmt.Println("arts and culture")
-			} else if idx%4 == 0 {
-				res, err = http.Get(serverUrl + "politics?limit=75")
-				// fmt.Println("politics")
-			} else if idx%3 == 0 {
-				res, err = http.Get(serverUrl + "sports?limit=75")
-				// fmt.Println("sports")
-			} else if idx % 2 == 0{
-				res, err = http.Get(serverUrl + "breaking-news?limit=75")
-				// fmt.Println("Breaking News")
-			} else {
-				res, err = http.Get(serverUrl + "front-page?limit=75")
-			}
-			fmt.Printf("%v\n", time.Since(beforeTime).Microseconds())
-		}(i)
+	beforeTime := time.Now()
+	if idx%9 == 0 {
+		res, err = http.Get(serverUrl + "human-interest?limit=75")
+		// fmt.Println("human interest")
+	} else if idx%8 == 0 {
+		res, err = http.Get(serverUrl + "business?limit=75")
+		// fmt.Println("business")
+	} else if idx%7 == 0 {
+		res, err = http.Get(serverUrl + "international-affairs?limit=75")
+		// fmt.Println("international affairs")
+	} else if idx%6 == 0 {
+		res, err = http.Get(serverUrl + "science-technology?limit=75")
+		// fmt.Println("science and technology")
+	} else if idx%5 == 0 {
+		res, err = http.Get(serverUrl + "arts-culture?limit=75")
+		// fmt.Println("arts and culture")
+	} else if idx%4 == 0 {
+		res, err = http.Get(serverUrl + "politics?limit=75")
+		// fmt.Println("politics")
+	} else if idx%3 == 0 {
+		res, err = http.Get(serverUrl + "sports?limit=75")
+		// fmt.Println("sports")
+	} else if idx%2 == 0 {
+		res, err = http.Get(serverUrl + "breaking-news?limit=75")
+		// fmt.Println("Breaking News")
+	} else {
+		res, err = http.Get(serverUrl + "front-page?limit=75")
 	}
+	fmt.Printf("%v\n", time.Since(beforeTime).Microseconds())
 	// i := rand.Intn(10)
 
 	// if i%9 == 0 {
@@ -300,7 +297,6 @@ func getBurstySectionArticles() *http.Response {
 	// 	res, err = http.Get(serverUrl + "breaking-news?limit=75")
 	// 	// fmt.Println("Breaking News")
 	// }
-	time.Sleep(3 * time.Second)
 	c.CheckErr(err)
 	return res
 }
