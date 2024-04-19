@@ -16,12 +16,12 @@ import (
 func main() {
 	// actualTest(10, 7*time.Hour, 3700, 0, "burstycs")
 	for i := 3; i < 6; i++ {
-		actualTest(500, 15*time.Minute, 20, i, 0, "bursty-alwayssec")
-		actualTest(1, 60*time.Minute, 130, i, 1, "bursty-alwayssec")
-		actualTest(500, 15*time.Minute, 30, i, 2, "bursty-alwayssec")
-		actualTest(1, 60*time.Minute, 130, i, 3, "bursty-alwayssec")
-		actualTest(500, 15*time.Minute, 30, i, 4, "bursty-alwayssec")
-		actualTest(1, 60*time.Minute, 130, i, 5, "bursty-alwayssec")
+		actualTest(500, 15*time.Minute, 20, i, 0, "bursty-.2sec")
+		actualTest(1, 60*time.Minute, 130, i, 1, "bursty-.2sec")
+		actualTest(500, 15*time.Minute, 30, i, 2, "bursty-.2sec")
+		actualTest(1, 60*time.Minute, 130, i, 3, "bursty-.2sec")
+		actualTest(500, 15*time.Minute, 30, i, 4, "bursty-.2sec")
+		actualTest(1, 60*time.Minute, 130, i, 5, "bursty-.2sec")
 	}
 
 }
@@ -63,11 +63,12 @@ func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, ru
 				}
 				writeOrGet := rand.Intn(150)
 				beforeTime := time.Now()
-				section := id % 10
-				getBurstySectionArticles(section)
 				if writeOrGet == 0 {
 					newMaxId := insertArticle()
 					writes <- newMaxId
+				} else if writeOrGet < 25 {
+					section := id % 10
+					getBurstySectionArticles(section)
 				} else {
 					getArticleById(id)
 				}
