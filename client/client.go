@@ -14,13 +14,18 @@ import (
 )
 
 func main() {
-	actualTest(10, 7*time.Hour, 3700, 0, "burstycs")
-	// actualTest(2500, 10*time.Minute, 20, 0, "bursty")
-	// actualTest(1, 90*time.Minute, 270, 1, "bursty")
-	// actualTest(500, 10*time.Minute, 30, 2, "bursty")
+	// actualTest(10, 7*time.Hour, 3700, 0, "burstycs")
+	for i := 3; i < 6; i++ {
+		actualTest(500, 15*time.Minute, 20, i, 0, "bursty-alwayssec")
+		actualTest(1, 60*time.Minute, 130, i, 1, "bursty-alwayssec")
+		actualTest(500, 15*time.Minute, 30, i, 2, "bursty-alwayssec")
+		actualTest(1, 60*time.Minute, 130, i, 3, "bursty-alwayssec")
+		actualTest(500, 15*time.Minute, 30, i, 4, "bursty-alwayssec")
+		actualTest(1, 60*time.Minute, 130, i, 5, "bursty-alwayssec")
+	}
 
 }
-func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, run int, label string) {
+func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, run int, part int, label string) {
 	clients := make(chan int, numClients)
 	writes := make(chan int, 1000)
 	overallTimer := time.NewTimer(testDuration)
@@ -28,11 +33,11 @@ func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, ru
 	src := rand.NewSource(int64(maxId))
 	zipf := rand.NewZipf(rand.New(src), 1.5, 8, uint64(maxId))
 	actualNumClients := 0
-	waitTimeStdDev := 1
+	waitTimeStdDev := 15
 
 	execTimeStringChan := make(chan string, 1000)
 	go func(run int) {
-		file, err := os.Create(fmt.Sprintf("%s-%dclients-%vduration-pause%d+%ds-cache-1pctWrites-%d.txt", label, numClients, testDuration, waitTimeStdDev, waitTimeMean, run))
+		file, err := os.Create(fmt.Sprintf("%s%d-%dclients-%vduration-pause%d+%ds-cache-1pctWrites-%d.txt", label, run, numClients, testDuration, waitTimeStdDev, waitTimeMean, part))
 		c.CheckErr(err)
 		file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 		for {
@@ -56,16 +61,16 @@ func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, ru
 				for i := 0; i < waitTime; i++ {
 					time.Sleep(1 * time.Second)
 				}
-				// writeOrGet := rand.Intn(150)
+				writeOrGet := rand.Intn(150)
 				beforeTime := time.Now()
 				section := id % 10
 				getBurstySectionArticles(section)
-				// if writeOrGet == 0 {
-				// 	newMaxId := insertArticle()
-				// 	writes <- newMaxId
-				// } else {
-				// 	getArticleById(id)
-				// }
+				if writeOrGet == 0 {
+					newMaxId := insertArticle()
+					writes <- newMaxId
+				} else {
+					getArticleById(id)
+				}
 				execTime := time.Since(beforeTime).Microseconds()
 				execTimeString := fmt.Sprintf("%v\n", execTime)
 				execTimeStringChan <- execTimeString
