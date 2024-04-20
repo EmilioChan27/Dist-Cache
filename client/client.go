@@ -15,12 +15,18 @@ import (
 
 func main() {
 	// actualTest(10, 7*time.Hour, 3700, 0, "burstycs")
-	for i := 3; i < 6; i++ {
+	for i := 0; i < 4; i++ {
+		changeSection("start-bursty-section")
 		actualTest(500, 15*time.Minute, 20, i, 0, "bursty-.2sec")
+		changeSection("start-non-bursty-section")
 		actualTest(1, 60*time.Minute, 130, i, 1, "bursty-.2sec")
+		changeSection("start-bursty-section")
 		actualTest(500, 15*time.Minute, 30, i, 2, "bursty-.2sec")
+		changeSection("start-non-bursty-section")
 		actualTest(1, 60*time.Minute, 130, i, 3, "bursty-.2sec")
+		changeSection("start-bursty-section")
 		actualTest(500, 15*time.Minute, 30, i, 4, "bursty-.2sec")
+		changeSection("start-non-bursty-section")
 		actualTest(1, 60*time.Minute, 130, i, 5, "bursty-.2sec")
 	}
 
@@ -37,7 +43,7 @@ func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, ru
 
 	execTimeStringChan := make(chan string, 1000)
 	go func(run int) {
-		file, err := os.Create(fmt.Sprintf("%s%d-%dclients-%vduration-pause%d+%ds-cache-1pctWrites-%d.txt", label, run, numClients, testDuration, waitTimeStdDev, waitTimeMean, part))
+		file, err := os.Create(fmt.Sprintf("%s%d-%dclients-%vduration-pause%d+%ds-ACTUALLYWcache-1pctWrites-%d.txt", label, run, numClients, testDuration, waitTimeStdDev, waitTimeMean, part))
 		c.CheckErr(err)
 		file.WriteString(fmt.Sprintf("%v\n", time.Now()))
 		for {
@@ -91,6 +97,15 @@ func actualTest(numClients int, testDuration time.Duration, waitTimeMean int, ru
 		}
 	}
 
+}
+func changeSection(s string) *http.Response {
+	serverUrl := "http://LX-Server:8080/"
+	var res *http.Response
+	res, err := http.Get(serverUrl + s)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return res
 }
 
 func getArticleById(id int) *http.Response {
