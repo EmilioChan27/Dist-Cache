@@ -17,15 +17,15 @@ func main() {
 	// actualTest(10, 7*time.Hour, 3700, 0, "burstycs")
 	for i := 0; i < 4; i++ {
 		changeSection("start-bursty-section")
-		actualTest(500, 15*time.Minute, 20, i, 0, "bursty-.2sec")
+		actualTest(500, 15*time.Minute, 45, i, 0, "bursty-.2sec")
 		changeSection("start-non-bursty-section")
 		actualTest(1, 60*time.Minute, 130, i, 1, "bursty-.2sec")
 		changeSection("start-bursty-section")
-		actualTest(500, 15*time.Minute, 30, i, 2, "bursty-.2sec")
+		actualTest(500, 15*time.Minute, 45, i, 2, "bursty-.2sec")
 		changeSection("start-non-bursty-section")
 		actualTest(1, 60*time.Minute, 130, i, 3, "bursty-.2sec")
 		changeSection("start-bursty-section")
-		actualTest(500, 15*time.Minute, 30, i, 4, "bursty-.2sec")
+		actualTest(500, 15*time.Minute, 45, i, 4, "bursty-.2sec")
 		changeSection("start-non-bursty-section")
 		actualTest(1, 60*time.Minute, 130, i, 5, "bursty-.2sec")
 	}
