@@ -23,10 +23,10 @@ var writeChanLen int
 
 func main() {
 	db = d.NewDB()
+	hotCapacity = 650
 	coldCapacity = 350
-	hotCapacity = 350
 	timerDuration = 55 * time.Second
-	writeChanLen = 75
+	writeChanLen = 300
 	cacheFile, err := os.OpenFile("cacheAccessTime.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	c.CheckErr(err)
 	cacheFile.WriteString(fmt.Sprintf("%v\n", time.Now()))
@@ -41,7 +41,7 @@ func main() {
 	cacheUpdateFile.Close()
 
 	// // articles := make([]*c.Article, 10)
-	articles, newestId, err := db.GetNewestArticles(700)
+	articles, newestId, err := db.GetNewestArticles(coldCapacity + hotCapacity)
 	cache = c.NewCache(hotCapacity, coldCapacity, timerDuration, writeChanLen, newestId)
 	if err != nil {
 		log.Fatal(err)
@@ -61,10 +61,26 @@ func main() {
 	http.HandleFunc("/breaking-news", getBreakingNewsArticles)
 	http.HandleFunc("/arts-culture", getArtsCultureArticles)
 	http.HandleFunc("/article", getArticleById)
+	http.HandleFunc("/start-non-bursty-section", nonBurstySectionHandler)
+	http.HandleFunc("/start-bursty-section", burstySectionHandler)
 	http.HandleFunc("/write", writeHandler)
 	startTimer(cache)
 	fmt.Println("Server is running on port 8080...")
 	http.ListenAndServe(":8080", nil)
+}
+
+func nonBurstySectionHandler(w http.ResponseWriter, r *http.Request) {
+	file, err := os.OpenFile("dbAccessTimeCacheServer.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	c.CheckErr(err)
+	file.WriteString(fmt.Sprintf("NON BURSTY SECTION %v\n", time.Now()))
+	file.Close()
+}
+
+func burstySectionHandler(w http.ResponseWriter, r *http.Request) {
+	file, err := os.OpenFile("dbAccessTimeCacheServer.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	c.CheckErr(err)
+	file.WriteString(fmt.Sprintf("NON BURSTY SECTION %v\n", time.Now()))
+	file.Close()
 }
 
 func recordCacheExecTime(beforeTime time.Time) {
@@ -178,104 +194,149 @@ func getHumanInterestArticles(w http.ResponseWriter, r *http.Request) {
 	} else {
 		recordCacheExecTime(beforeTime)
 	}
-	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
-		if limit < coldCapacity {
-			beforeTime = time.Now()
-			updateCache(cache, articles)
-			recordCacheUpdateTime(beforeTime)
-		}
-	}(limit, coldCapacity, cache, articles)
+	// go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+	// }(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		beforeTime = time.Now()
+		updateCache(cache, articles)
+		recordCacheUpdateTime(beforeTime)
+	}
 
 }
 func getInternationalAffairsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	c.CheckErr(err)
+	beforeTime := time.Now()
 	articles := cache.GetArticlesByCategory("International Affairs", limit, true)
 	if len(articles) < limit {
+		beforeTime = time.Now()
 		articles, err = db.GetArticlesByCategory("International Affairs", limit)
 		c.CheckErr(err)
+		recordDBExecTime(beforeTime)
 		cache.ResetTimer(timerDuration)
-
+	} else {
+		recordCacheExecTime(beforeTime)
 	}
-	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
-		if limit < coldCapacity {
-			updateCache(cache, articles)
-		}
-	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		beforeTime = time.Now()
+		updateCache(cache, articles)
+		recordCacheUpdateTime(beforeTime)
+	}
+	// go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+	// 	if limit < coldCapacity {
+	// 		updateCache(cache, articles)
+	// 	}
+	// }(limit, coldCapacity, cache, articles)
 
 }
 func getSportsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	c.CheckErr(err)
+	beforeTime := time.Now()
 	articles := cache.GetArticlesByCategory("Sports", limit, true)
 	if len(articles) < limit {
+		beforeTime = time.Now()
 		articles, err = db.GetArticlesByCategory("Sports", limit)
 		c.CheckErr(err)
+		recordDBExecTime(beforeTime)
 		cache.ResetTimer(timerDuration)
-
+	} else {
+		recordCacheExecTime(beforeTime)
 	}
-	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
-		if limit < coldCapacity {
-			updateCache(cache, articles)
-		}
-	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		beforeTime = time.Now()
+		updateCache(cache, articles)
+		recordCacheUpdateTime(beforeTime)
+	}
+	// go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+	// 	if limit < coldCapacity {
+	// 		updateCache(cache, articles)
+	// 	}
+	// }(limit, coldCapacity, cache, articles)
 
 }
 func getPoliticsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	c.CheckErr(err)
+	beforeTime := time.Now()
 	articles := cache.GetArticlesByCategory("Politics", limit, true)
 	if len(articles) < limit {
+		beforeTime = time.Now()
 		articles, err = db.GetArticlesByCategory("Politics", limit)
 		c.CheckErr(err)
+		recordDBExecTime(beforeTime)
 		cache.ResetTimer(timerDuration)
-
+	} else {
+		recordCacheExecTime(beforeTime)
 	}
-	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
-		if limit < coldCapacity {
-			updateCache(cache, articles)
-		}
-	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		beforeTime = time.Now()
+		updateCache(cache, articles)
+		recordCacheUpdateTime(beforeTime)
+	}
+	// go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+	// 	if limit < coldCapacity {
+	// 		updateCache(cache, articles)
+	// 	}
+	// }(limit, coldCapacity, cache, articles)
 
 }
 func getScienceTechnologyArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	c.CheckErr(err)
+	beforeTime := time.Now()
 	articles := cache.GetArticlesByCategory("Politics", limit, true)
 	if len(articles) < limit {
+		beforeTime = time.Now()
 		articles, err = db.GetArticlesByCategory("Politics", limit)
 		c.CheckErr(err)
+		recordDBExecTime(beforeTime)
 		cache.ResetTimer(timerDuration)
-
+	} else {
+		recordCacheExecTime(beforeTime)
 	}
-	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
-		if limit < coldCapacity {
-			updateCache(cache, articles)
-		}
-	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		beforeTime = time.Now()
+		updateCache(cache, articles)
+		recordCacheUpdateTime(beforeTime)
+	}
+	// go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+	// 	if limit < coldCapacity {
+	// 		updateCache(cache, articles)
+	// 	}
+	// }(limit, coldCapacity, cache, articles)
 
 }
 func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	c.CheckErr(err)
+	beforeTime := time.Now()
 	articles := cache.GetArticlesByCategory("Politics", limit, true)
 	if len(articles) < limit {
+		beforeTime = time.Now()
 		articles, err = db.GetArticlesByCategory("Politics", limit)
 		c.CheckErr(err)
+		recordDBExecTime(beforeTime)
 		cache.ResetTimer(timerDuration)
-
+	} else {
+		recordCacheExecTime(beforeTime)
 	}
-	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
-		if limit < coldCapacity {
-			updateCache(cache, articles)
-		}
-	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
+	if limit < coldCapacity {
+		beforeTime = time.Now()
+		updateCache(cache, articles)
+		recordCacheUpdateTime(beforeTime)
+	}
+	// go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+	// 	if limit < coldCapacity {
+	// 		updateCache(cache, articles)
+	// 	}
+	// }(limit, coldCapacity, cache, articles)
 
 }
 
@@ -295,37 +356,53 @@ func getBusinessArticles(w http.ResponseWriter, r *http.Request) {
 func getBreakingNewsArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	c.CheckErr(err)
+	beforeTime := time.Now()
 	articles := cache.GetArticlesByCategory("Breaking News", limit, true)
 	if len(articles) < limit {
+		beforeTime = time.Now()
 		articles, err = db.GetArticlesByCategory("Breaking News", limit)
 		c.CheckErr(err)
+		recordDBExecTime(beforeTime)
 		cache.ResetTimer(timerDuration)
 
+	} else {
+		recordCacheExecTime(beforeTime)
 	}
-	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
-		if limit < coldCapacity {
-			updateCache(cache, articles)
-		}
-	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
+	// go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+	// 	if limit < coldCapacity {
+	// 		updateCache(cache, articles)
+	// 	}
+	// }(limit, coldCapacity, cache, articles)
+	if limit < coldCapacity {
+		beforeTime = time.Now()
+		updateCache(cache, articles)
+		recordCacheUpdateTime(beforeTime)
+	}
 
 }
 func getArtsCultureArticles(w http.ResponseWriter, r *http.Request) {
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	c.CheckErr(err)
+	beforeTime := time.Now()
 	articles := cache.GetArticlesByCategory("Arts and Culture", limit, true)
 	if len(articles) < limit {
+		beforeTime = time.Now()
 		articles, err = db.GetArticlesByCategory("Arts and Culture", limit)
 		c.CheckErr(err)
+		recordDBExecTime(beforeTime)
 		cache.ResetTimer(timerDuration)
-
+	} else {
+		recordCacheExecTime(beforeTime)
 	}
-	go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
-		if limit < coldCapacity {
-			updateCache(cache, articles)
-		}
-	}(limit, coldCapacity, cache, articles)
 	encodeArticles(w, articles)
+	// go func(limit int, coldCapacity int, cache *c.Cache, articles []*c.Article) {
+	if limit < coldCapacity {
+		beforeTime = time.Now()
+		updateCache(cache, articles)
+		recordCacheUpdateTime(beforeTime)
+	}
+	// }(limit, coldCapacity, cache, articles)
 }
 
 func getArticleById(w http.ResponseWriter, r *http.Request) {
@@ -344,12 +421,12 @@ func getArticleById(w http.ResponseWriter, r *http.Request) {
 	}
 	articles := make([]*c.Article, 1)
 	articles[0] = article
-	go func(cache *c.Cache, articles []*c.Article) {
-		beforeTime := time.Now()
-		updateCache(cache, articles)
-		recordCacheUpdateTime(beforeTime)
-	}(cache, articles)
 	encodeArticles(w, articles)
+	// go func(cache *c.Cache, articles []*c.Article) {
+	beforeTime = time.Now()
+	updateCache(cache, articles)
+	recordCacheUpdateTime(beforeTime)
+	// }(cache, articles)
 }
 
 func encodeArticles(w http.ResponseWriter, articles []*c.Article) {
